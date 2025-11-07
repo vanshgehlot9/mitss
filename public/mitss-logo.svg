@@ -1,0 +1,37 @@
+<svg width="600" height="200" viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- M Letter (Red) -->
+  <rect x="30" y="100" width="30" height="80" rx="15" fill="#E63946"/>
+  <path d="M 60 100 Q 95 40, 130 100" stroke="#E63946" stroke-width="35" fill="none" stroke-linecap="round"/>
+  
+  <!-- I Letter (Red) -->
+  <rect x="160" y="50" width="30" height="130" rx="15" fill="#E63946"/>
+  
+  <!-- T Letter (Red) -->
+  <path d="M 240 70 L 380 70" stroke="#E63946" stroke-width="30" fill="none" stroke-linecap="round"/>
+  <rect x="295" y="70" width="30" height="110" rx="15" fill="#E63946"/>
+  
+  <!-- S Letter (Orange to Green gradient) -->
+  <defs>
+    <linearGradient id="sGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F4A460;stop-opacity:1" />
+      <stop offset="40%" style="stop-color:#F4A460;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#52B788;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- S curve -->
+  <path d="M 440 70 Q 450 60, 460 70 Q 475 80, 465 95 L 445 115 Q 435 125, 425 135 Q 415 145, 425 155 Q 435 165, 445 155 Q 460 145, 470 155" 
+        stroke="url(#sGradient)" 
+        stroke-width="30" 
+        fill="none" 
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+  
+  <!-- Enhanced S curve bottom -->
+  <path d="M 520 100 Q 510 90, 500 100 Q 485 110, 495 125 L 515 145 Q 525 155, 535 165" 
+        stroke="url(#sGradient)" 
+        stroke-width="30" 
+        fill="none" 
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+</svg>
