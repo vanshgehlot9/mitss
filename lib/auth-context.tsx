@@ -81,6 +81,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Listen to auth state changes
   useEffect(() => {
+    if (!auth) {
+      setLoading(false)
+      return
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user)
       if (user) {
@@ -96,6 +101,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Register new user
   const register = async (email: string, password: string, name: string, phone?: string) => {
+    if (!auth) {
+      toast.error('Authentication not initialized')
+      throw new Error('Authentication not initialized')
+    }
+
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
       const user = userCredential.user
@@ -139,6 +149,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Login user
   const login = async (email: string, password: string) => {
+    if (!auth) {
+      toast.error('Authentication not initialized')
+      throw new Error('Authentication not initialized')
+    }
+
     try {
       await signInWithEmailAndPassword(auth, email, password)
       toast.success('Login successful!')
@@ -157,6 +172,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Login with Google
   const loginWithGoogle = async () => {
+    if (!auth) {
+      toast.error('Authentication not initialized')
+      throw new Error('Authentication not initialized')
+    }
+
     try {
       const provider = new GoogleAuthProvider()
       const userCredential = await signInWithPopup(auth, provider)
@@ -201,6 +221,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Logout user
   const logout = async () => {
+    if (!auth) {
+      toast.error('Authentication not initialized')
+      throw new Error('Authentication not initialized')
+    }
+
     try {
       await signOut(auth)
       toast.success('Logged out successfully')
@@ -213,6 +238,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Reset password
   const resetPassword = async (email: string) => {
+    if (!auth) {
+      toast.error('Authentication not initialized')
+      throw new Error('Authentication not initialized')
+    }
+
     try {
       await sendPasswordResetEmail(auth, email)
       toast.success('Password reset email sent!')
