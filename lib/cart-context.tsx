@@ -1,6 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { useAuth } from './auth-context'
 
 export interface CartItem {
   id: number
@@ -19,25 +20,142 @@ interface CartContextType {
   clearCart: () => void
   getTotalItems: () => number
   getTotalPrice: () => number
+  syncCartWithDB: () => Promise<void>
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([])
+  const { user } = useAuth ? useAuth() : { user: null }
 
-  // Load cart from localStorage on mount
+  // Load cart from localStorage or MongoDB API
   useEffect(() => {
-    const savedCart = localStorage.getItem('mitss-cart')
-    if (savedCart) {
-      setCart(JSON.parse(savedCart))
+    const loadCart = async () => {
+      if (user) {
+        // Load from MongoDB for logged-in users
+        try {
+          const response = await fetch('/api/cart', {
+            headers: {
+              'x-user-id': user.uid
+            }
+          })
+          
+          if (response.ok) {
+            const data = await response.json()
+            const dbCart = data.items || []
+            
+            // Merge with localStorage cart if exists
+            const localCart = localStorage.getItem('mitss-cart')
+            if (localCart) {
+              const parsedLocalCart = JSON.parse(localCart)
+              const mergedCart = mergeCart(dbCart, parsedLocalCart)
+              setCart(mergedCart)
+              // Save merged cart to MongoDB
+              await fetch('/api/cart', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'x-user-id': user.uid
+                },
+                body: JSON.stringify({ items: mergedCart })
+              })
+              // Clear localStorage
+              localStorage.removeItem('mitss-cart')
+            } else {
+              setCart(dbCart)
+            }
+          } else {
+            // Check localStorage
+            const localCart = localStorage.getItem('mitss-cart')
+            if (localCart) {
+              const parsedCart = JSON.parse(localCart)
+              setCart(parsedCart)
+              // Save to MongoDB
+              await fetch('/api/cart', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'x-user-id': user.uid
+                },
+                body: JSON.stringify({ items: parsedCart })
+              })
+              localStorage.removeItem('mitss-cart')
+            }
+          }
+        } catch (error) {
+          console.error('Error loading cart from MongoDB:', error)
+          // Fallback to localStorage
+          const savedCart = localStorage.getItem('mitss-cart')
+          if (savedCart) {
+            setCart(JSON.parse(savedCart))
+          }
+        }
+      } else {
+        // Load from localStorage for non-logged-in users
+        const savedCart = localStorage.getItem('mitss-cart')
+        if (savedCart) {
+          setCart(JSON.parse(savedCart))
+        }
+      }
     }
-  }, [])
 
-  // Save cart to localStorage whenever it changes
+    loadCart()
+  }, [user])
+
+  // Helper function to merge carts
+  const mergeCart = (dbCart: CartItem[], localCart: CartItem[]): CartItem[] => {
+    const merged = [...dbCart]
+    
+    localCart.forEach(localItem => {
+      const existingIndex = merged.findIndex(item => item.id === localItem.id)
+      if (existingIndex >= 0) {
+        // Increase quantity if item exists
+        merged[existingIndex].quantity += localItem.quantity
+      } else {
+        // Add new item
+        merged.push(localItem)
+      }
+    })
+    
+    return merged
+  }
+
+  // Save cart to MongoDB or localStorage
+  const saveCart = async (newCart: CartItem[]) => {
+    if (user) {
+      try {
+        await fetch('/api/cart', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': user.uid
+          },
+          body: JSON.stringify({ items: newCart })
+        })
+      } catch (error) {
+        console.error('Error saving cart to MongoDB:', error)
+        // Fallback to localStorage
+        localStorage.setItem('mitss-cart', JSON.stringify(newCart))
+      }
+    } else {
+      localStorage.setItem('mitss-cart', JSON.stringify(newCart))
+    }
+  }
+
+  // Sync cart with database (called when cart changes)
   useEffect(() => {
-    localStorage.setItem('mitss-cart', JSON.stringify(cart))
-  }, [cart])
+    if (cart.length >= 0) {
+      saveCart(cart)
+    }
+  }, [cart, user])
+
+  // Sync cart with DB manually
+  const syncCartWithDB = async () => {
+    if (user) {
+      await saveCart(cart)
+    }
+  }
 
   const addToCart = (item: Omit<CartItem, 'quantity'>) => {
     setCart(prevCart => {
@@ -94,6 +212,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         clearCart,
         getTotalItems,
         getTotalPrice,
+        syncCartWithDB,
       }}
     >
       {children}

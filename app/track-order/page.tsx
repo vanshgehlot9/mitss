@@ -1,6 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
+import { useAuth } from "@/lib/auth-context"
 import Navigation from "@/components/navigation"
 import Footer from "@/components/footer"
 import { motion } from "framer-motion"
@@ -10,85 +12,109 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
+import { toast } from "sonner"
 
-export default function OrderTrackingPage() {
-  const [orderNumber, setOrderNumber] = useState("")
+function TrackingContent() {
+  const { user } = useAuth()
+  const searchParams = useSearchParams()
+  const orderId = searchParams.get('id')
+  const orderNum = searchParams.get('number')
+  
+  const [orderNumber, setOrderNumber] = useState(orderNum || "")
   const [phoneNumber, setPhoneNumber] = useState("")
   const [trackingData, setTrackingData] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
 
+  // Auto-load order if ID is provided
+  useEffect(() => {
+    if (orderId && user) {
+      fetchOrderById(orderId)
+    }
+  }, [orderId, user])
+
+  const fetchOrderById = async (id: string) => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/orders?orderId=${id}`)
+      const data = await response.json()
+      
+      if (data.success && data.order) {
+        setTrackingData(transformOrderData(data.order))
+      } else {
+        toast.error('Order not found')
+      }
+    } catch (error) {
+      console.error('Error fetching order:', error)
+      toast.error('Failed to fetch order details')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const transformOrderData = (order: any) => {
+    const timeline = order.trackingInfo?.statusHistory.map((history: any, index: number) => ({
+      status: formatStatus(history.status),
+      date: new Date(history.timestamp).toLocaleString('en-IN'),
+      description: history.message,
+      completed: true,
+      current: index === order.trackingInfo.statusHistory.length - 1
+    })) || []
+
+    return {
+      orderNumber: order.orderNumber,
+      orderDate: new Date(order.createdAt?.toDate?.() || order.createdAt).toLocaleDateString('en-IN'),
+      estimatedDelivery: getEstimatedDelivery(order.createdAt),
+      status: order.trackingInfo?.status || order.status,
+      currentLocation: order.trackingInfo?.currentLocation || 'Processing',
+      deliveryPerson: order.trackingInfo?.deliveryPerson,
+      timeline,
+      items: order.items,
+      shippingAddress: order.shippingAddress
+    }
+  }
+
+  const formatStatus = (status: string) => {
+    return status.split('_').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ')
+  }
+
+  const getEstimatedDelivery = (createdAt: any) => {
+    const date = createdAt?.toDate ? createdAt.toDate() : new Date(createdAt)
+    const delivery = new Date(date)
+    delivery.setDate(delivery.getDate() + 7) // 7 days delivery
+    return delivery.toLocaleDateString('en-IN')
+  }
+
   const handleTrack = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!orderNumber) {
+      toast.error('Please enter order number')
+      return
+    }
+
     setIsLoading(true)
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
-
-    // Mock tracking data
-    setTrackingData({
-      orderNumber: orderNumber,
-      orderDate: "25 Oct 2025",
-      estimatedDelivery: "8 Nov 2025",
-      status: "in_transit",
-      currentLocation: "Mumbai Delivery Hub",
-      deliveryPerson: {
-        name: "Rajesh Kumar",
-        phone: "+91 98765 43210"
-      },
-      timeline: [
-        {
-          status: "Order Placed",
-          date: "25 Oct 2025, 10:30 AM",
-          description: "Your order has been placed successfully",
-          completed: true
-        },
-        {
-          status: "Order Confirmed",
-          date: "25 Oct 2025, 11:15 AM",
-          description: "Your order has been confirmed and is being prepared",
-          completed: true
-        },
-        {
-          status: "Shipped",
-          date: "27 Oct 2025, 9:00 AM",
-          description: "Your order has been shipped from our warehouse",
-          completed: true
-        },
-        {
-          status: "In Transit",
-          date: "2 Nov 2025, 2:30 PM",
-          description: "Your order is on the way to delivery hub",
-          completed: true,
-          current: true
-        },
-        {
-          status: "Out for Delivery",
-          date: "Expected: 7 Nov 2025",
-          description: "Your order will be out for delivery",
-          completed: false
-        },
-        {
-          status: "Delivered",
-          date: "Expected: 8 Nov 2025",
-          description: "Your order will be delivered",
-          completed: false
+    try {
+      // Search by order number
+      const response = await fetch(`/api/orders?userId=${user?.uid || 'guest'}`)
+      const data = await response.json()
+      
+      if (data.success) {
+        const order = data.orders.find((o: any) => o.orderNumber === orderNumber)
+        if (order) {
+          setTrackingData(transformOrderData(order))
+        } else {
+          toast.error('Order not found')
         }
-      ],
-      items: [
-        {
-          name: "Royal Velvet Sofa",
-          quantity: 1,
-          image: "🛋️"
-        },
-        {
-          name: "Coffee Table",
-          quantity: 1,
-          image: "🪑"
-        }
-      ]
-    })
-
-    setIsLoading(false)
+      }
+    } catch (error) {
+      console.error('Error tracking order:', error)
+      toast.error('Failed to track order')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -311,5 +337,21 @@ export default function OrderTrackingPage() {
 
       <Footer />
     </main>
+  )
+}
+
+export default function OrderTrackingPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-background">
+        <Navigation />
+        <div className="container mx-auto px-4 py-32 text-center">
+          <p>Loading tracking information...</p>
+        </div>
+        <Footer />
+      </main>
+    }>
+      <TrackingContent />
+    </Suspense>
   )
 }

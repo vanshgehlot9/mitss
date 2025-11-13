@@ -9,12 +9,9 @@ export default function Hero() {
     <section className="relative h-screen w-full overflow-hidden">
       {/* Background with video */}
       <div className="absolute inset-0 z-0">
-        {/* Static background as base */}
+        {/* Gradient background as base */}
         <div 
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: "url('/artisans-carving-wood--polishing-furniture-in-work.jpg')",
-          }}
+          className="absolute inset-0 bg-gradient-to-br from-[#1A2642] via-[#2A3652] to-[#1A2642]"
         />
         
         {/* Video overlay */}
@@ -24,7 +21,7 @@ export default function Hero() {
           muted 
           playsInline
           preload="auto"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover opacity-70"
           onCanPlay={(e) => e.currentTarget.play()}
         >
           <source src="/Cinematic_Woodworking_Craftsmanship_Video_Generated.mp4" type="video/mp4" />

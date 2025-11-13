@@ -1,8 +1,8 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp } from "firebase/app"
 import { getAnalytics, Analytics } from "firebase/analytics"
-import { getAuth } from "firebase/auth"
-import { getFirestore } from "firebase/firestore"
+import { getAuth, connectAuthEmulator } from "firebase/auth"
+import { getFirestore, connectFirestoreEmulator } from "firebase/firestore"
 import { getStorage } from "firebase/storage"
 
 // Your web app's Firebase configuration
@@ -28,7 +28,11 @@ const storage = getStorage(app)
 // Analytics (only in browser)
 let analytics: Analytics | null = null
 if (typeof window !== 'undefined') {
-  analytics = getAnalytics(app)
+  try {
+    analytics = getAnalytics(app)
+  } catch (error) {
+    console.warn('Analytics not available:', error)
+  }
 }
 
 export { app, auth, db, storage, analytics }

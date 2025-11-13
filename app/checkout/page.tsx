@@ -1,7 +1,8 @@
 "use client"
 
 import { useCart } from "@/lib/cart-context"
-import { useState } from "react"
+import { useAuth } from "@/lib/auth-context"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Navigation from "@/components/navigation"
 import Footer from "@/components/footer"
@@ -17,10 +18,19 @@ import { toast } from "sonner"
 
 export default function CheckoutPage() {
   const { cart, getTotalPrice } = useCart()
+  const { user, userData } = useAuth()
   const router = useRouter()
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!user) {
+      toast.error("Please login to continue checkout")
+      router.push("/account?redirect=/checkout")
+    }
+  }, [user, router])
   
   const [formData, setFormData] = useState({
-    // Personal Info
+    // Personal Info - prefill from user data
     firstName: "",
     lastName: "",
     email: "",
@@ -45,6 +55,32 @@ export default function CheckoutPage() {
     deliveryInstructions: "",
     gstNumber: "",
   })
+
+  // Load user data when available
+  useEffect(() => {
+    if (userData) {
+      setFormData(prev => ({
+        ...prev,
+        firstName: userData.displayName?.split(' ')[0] || '',
+        lastName: userData.displayName?.split(' ').slice(1).join(' ') || '',
+        email: userData.email || '',
+        phone: userData.phoneNumber || '',
+      }))
+
+      // Load default address if available
+      const defaultAddress = userData.addresses?.find(addr => addr.isDefault)
+      if (defaultAddress) {
+        setFormData(prev => ({
+          ...prev,
+          address: defaultAddress.address,
+          city: defaultAddress.city,
+          state: defaultAddress.state,
+          pincode: defaultAddress.pincode,
+          phone: defaultAddress.phone,
+        }))
+      }
+    }
+  }, [userData])
 
   const [agreedToTerms, setAgreedToTerms] = useState(false)
 

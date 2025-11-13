@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/lib/auth-context"
+import { useCart } from "@/lib/cart-context"
 import Navigation from "@/components/navigation"
 import Footer from "@/components/footer"
 import { motion } from "framer-motion"
@@ -14,40 +16,128 @@ import { toast } from "sonner"
 
 export default function PaymentPage() {
   const router = useRouter()
+  const { user, userData } = useAuth()
+  const { clearCart } = useCart()
   const [checkoutData, setCheckoutData] = useState<any>(null)
   const [paymentMethod, setPaymentMethod] = useState("card")
   const [processing, setProcessing] = useState(false)
 
   useEffect(() => {
+    // Check authentication
+    if (!user) {
+      toast.error("Please login to continue")
+      router.push("/account")
+      return
+    }
+
     const data = localStorage.getItem("checkoutData")
     if (!data) {
       router.push("/checkout")
       return
     }
     setCheckoutData(JSON.parse(data))
-  }, [router])
+  }, [router, user])
 
   const handlePayment = async () => {
+    if (!user || !checkoutData) return
+    
     setProcessing(true)
     
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    // Save order details
-    const orderData = {
-      orderId: `MITSS${Date.now()}`,
-      ...checkoutData,
-      paymentMethod,
-      status: "paid",
-      timestamp: new Date().toISOString()
+    try {
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Prepare order data
+      const { formData, cart, pricing } = checkoutData
+      
+      const orderPayload = {
+        userId: user.uid,
+        userEmail: user.email,
+        userName: userData?.displayName || `${formData.firstName} ${formData.lastName}`,
+        items: cart.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          image: item.image,
+          category: item.category
+        })),
+        shippingAddress: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          apartment: formData.apartment,
+          city: formData.city,
+          state: formData.state,
+          pincode: formData.pincode,
+          landmark: formData.landmark
+        },
+        billingAddress: formData.sameAsShipping ? {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          address: formData.address,
+          apartment: formData.apartment,
+          city: formData.city,
+          state: formData.state,
+          pincode: formData.pincode
+        } : {
+          address: formData.billingAddress,
+          city: formData.billingCity,
+          state: formData.billingState,
+          pincode: formData.billingPincode
+        },
+        paymentMethod,
+        pricing: {
+          subtotal: pricing.subtotal,
+          shipping: pricing.shipping,
+          gst: pricing.gst,
+          total: pricing.total
+        },
+        customerInfo: {
+          deliveryInstructions: formData.deliveryInstructions,
+          gstNumber: formData.gstNumber
+        }
+      }
+      
+      // Create order in database
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderPayload)
+      })
+      
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create order')
+      }
+      
+      // Save order info to localStorage for order confirmation page
+      localStorage.setItem("lastOrder", JSON.stringify({
+        orderId: result.orderId,
+        orderNumber: result.orderNumber,
+        ...orderPayload,
+        status: "paid",
+        timestamp: new Date().toISOString()
+      }))
+      
+      // Clear checkout data and cart
+      localStorage.removeItem("checkoutData")
+      clearCart()
+      
+      toast.success("Payment successful! Order placed.")
+      router.push("/order-confirmation")
+      
+    } catch (error: any) {
+      console.error('Payment error:', error)
+      toast.error(error.message || "Payment failed. Please try again.")
+    } finally {
+      setProcessing(false)
     }
-    
-    localStorage.setItem("lastOrder", JSON.stringify(orderData))
-    localStorage.removeItem("checkoutData")
-    localStorage.removeItem("cart") // Clear cart
-    
-    toast.success("Payment successful!")
-    router.push("/order-confirmation")
   }
 
   if (!checkoutData) {

@@ -2,12 +2,10 @@ import type { Metadata } from 'next'
 import { Poppins, Lora } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/theme-provider'
+import { AuthProvider } from '@/lib/auth-context'
 import { CartProvider } from '@/lib/cart-context'
 import { Toaster } from '@/components/ui/sonner'
-import WelcomePopup from '@/components/welcome-popup'
-import WhatsAppChat from '@/components/whatsapp-chat'
-import CookieConsent from '@/components/cookie-consent'
-import ScarcityAlerts from '@/components/scarcity-alerts'
+import ClientComponents from '@/components/client-components'
 import './globals.css'
 
 const poppins = Poppins({ 
@@ -155,14 +153,13 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          <CartProvider>
-            <WelcomePopup />
-            <ScarcityAlerts />
-            {children}
-            <Toaster position="top-center" richColors />
-            <WhatsAppChat />
-            <CookieConsent />
-          </CartProvider>
+          <AuthProvider>
+            <CartProvider>
+              <ClientComponents />
+              {children}
+              <Toaster position="top-center" richColors />
+            </CartProvider>
+          </AuthProvider>
         </ThemeProvider>
         <Analytics />
       </body>

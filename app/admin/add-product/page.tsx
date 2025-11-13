@@ -1,8 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import Navigation from "@/components/navigation"
-import Footer from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -100,12 +98,12 @@ export default function AdminAddProductPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background">
-      <Navigation />
-      
-      <div className="pt-32 pb-20">
-        <div className="container mx-auto px-4 max-w-3xl">
-          <h1 className="text-4xl font-bold text-[#1A2642] mb-8">Add New Product</h1>
+    <div className="p-6">
+      <div className="space-y-6 p-6">
+        <div>
+          <h1 className="text-3xl font-bold text-[#1A2642]">Add New Product</h1>
+          <p className="text-gray-500 mt-1">Create a new product in your catalog</p>
+        </div>
 
           <Card>
             <CardHeader>
@@ -332,10 +330,7 @@ export default function AdminAddProductPage() {
               </form>
             </CardContent>
           </Card>
-        </div>
       </div>
-
-      <Footer />
-    </main>
+    </div>
   )
 }

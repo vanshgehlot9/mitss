@@ -87,7 +87,7 @@ export default function FeaturedProducts() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {products.map((product, index) => (
             <motion.div
-              key={product.id}
+              key={`featured-${product.id || product._id || index}`}
               initial={{ opacity: 0, y: 50 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.7, delay: index * 0.2 }}

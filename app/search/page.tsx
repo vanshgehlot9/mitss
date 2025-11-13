@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Navigation from "@/components/navigation"
 import Footer from "@/components/footer"
@@ -18,7 +18,7 @@ import Link from "next/link"
 import { useCart } from "@/lib/cart-context"
 import { useToast } from "@/hooks/use-toast"
 
-export default function SearchPage() {
+function SearchContent() {
   const searchParams = useSearchParams()
   const queryParam = searchParams.get('q') || ''
   
@@ -344,5 +344,21 @@ export default function SearchPage() {
 
       <Footer />
     </main>
+  )
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-background">
+        <Navigation />
+        <div className="container mx-auto px-4 py-32 text-center">
+          <p>Loading search...</p>
+        </div>
+        <Footer />
+      </main>
+    }>
+      <SearchContent />
+    </Suspense>
   )
 }
