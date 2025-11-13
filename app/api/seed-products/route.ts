@@ -4,7 +4,7 @@ import { initialProducts } from "@/lib/initial-products"
 
 export async function POST(request: NextRequest) {
   try {
-    const client = await clientPromise
+    const client = await clientPromise()
     const db = client.db(process.env.DATABASE_NAME || "default")
     const collection = db.collection(process.env.PRODUCTS_COLLECTION || "products")
 

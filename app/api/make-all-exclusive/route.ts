@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
-    const client = await clientPromise
+    const client = await clientPromise()
     const db = client.db(process.env.DATABASE_NAME || "default")
     
     // Update all products to be exclusive

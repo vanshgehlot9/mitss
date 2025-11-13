@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       id: `addr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     }
 
-    const client = await clientPromise
+    const client = await clientPromise()
     const db = client.db('mitss-ecommerce')
     
     await db.collection('users').updateOne(
@@ -45,7 +45,7 @@ export async function PATCH(request: NextRequest) {
 
     const { addressId, ...updates } = await request.json()
 
-    const client = await clientPromise
+    const client = await clientPromise()
     const db = client.db(process.env.DATABASE_NAME || 'default')
     
     await db.collection('users').updateOne(
@@ -79,7 +79,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Address ID required' }, { status: 400 })
     }
 
-    const client = await clientPromise
+    const client = await clientPromise()
     const db = client.db(process.env.DATABASE_NAME || 'default')
     
     await db.collection('users').updateOne(

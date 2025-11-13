@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
     const previousStartDate = new Date(startDate.getTime() - days * 24 * 60 * 60 * 1000)
 
-    const client = await clientPromise
+    const client = await clientPromise()
     const db = client.db(process.env.DATABASE_NAME || 'default')
 
     // Fetch orders for current period

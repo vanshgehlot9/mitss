@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const client = await clientPromise
+    const client = await clientPromise()
     const db = client.db(process.env.DATABASE_NAME || 'default')
     const user = await db.collection('users').findOne({ uid: userId })
 
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     const userData = await request.json()
 
-    const client = await clientPromise
+    const client = await clientPromise()
     const db = client.db(process.env.DATABASE_NAME || 'default')
     
     await db.collection('users').updateOne(
@@ -72,7 +72,7 @@ export async function PATCH(request: NextRequest) {
 
     const updates = await request.json()
 
-    const client = await clientPromise
+    const client = await clientPromise()
     const db = client.db(process.env.DATABASE_NAME || 'default')
     
     await db.collection('users').updateOne(

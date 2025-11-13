@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const client = await clientPromise
+    const client = await clientPromise()
     const db = client.db(process.env.DATABASE_NAME || 'default')
     const products = db.collection(process.env.PRODUCTS_COLLECTION || 'products')
 
@@ -40,7 +40,7 @@ export async function PUT(
 ) {
   try {
     const { id } = await params
-    const client = await clientPromise
+    const client = await clientPromise()
     const db = client.db(process.env.DATABASE_NAME || 'default')
     const products = db.collection(process.env.PRODUCTS_COLLECTION || 'products')
 
@@ -83,7 +83,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const client = await clientPromise
+    const client = await clientPromise()
     const db = client.db(process.env.DATABASE_NAME || 'default')
     const products = db.collection(process.env.PRODUCTS_COLLECTION || 'products')
 

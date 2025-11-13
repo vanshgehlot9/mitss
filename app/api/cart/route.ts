@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const client = await clientPromise
+    const client = await clientPromise()
     const db = client.db(process.env.DATABASE_NAME || 'default')
     const cart = await db.collection('carts').findOne({ userId })
 
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     const { items } = await request.json()
 
-    const client = await clientPromise
+    const client = await clientPromise()
     const db = client.db(process.env.DATABASE_NAME || 'default')
     
     await db.collection('carts').updateOne(
@@ -62,7 +62,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const client = await clientPromise
+    const client = await clientPromise()
     const db = client.db(process.env.DATABASE_NAME || 'default')
     
     await db.collection('carts').deleteOne({ userId })

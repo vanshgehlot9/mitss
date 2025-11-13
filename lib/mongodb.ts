@@ -35,6 +35,6 @@ function getClientPromise(): Promise<MongoClient> {
   return clientPromise
 }
 
-// Export a function that returns the promise, not the promise itself
-// This way it's only created when actually called
-export default getClientPromise()
+// Don't call getClientPromise() here! Export the function itself
+// This way it's only called when the API route actually runs
+export default getClientPromise

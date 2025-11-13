@@ -3,7 +3,7 @@ import clientPromise from '@/lib/mongodb'
 
 export async function GET(request: NextRequest) {
   try {
-    const client = await clientPromise
+    const client = await clientPromise()
     const db = client.db(process.env.DATABASE_NAME || 'default')
     
     // Test the connection by listing collections

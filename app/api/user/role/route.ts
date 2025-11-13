@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const client = await clientPromise
+    const client = await clientPromise()
     const db = client.db(process.env.DATABASE_NAME || 'default')
     let userRole = await db.collection('userRoles').findOne({ uid: userId })
 
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify admin has permission to assign roles
-    const client = await clientPromise
+    const client = await clientPromise()
     const db = client.db(process.env.DATABASE_NAME || 'default')
     const adminRole = await db.collection('userRoles').findOne({ uid: adminUserId })
 
