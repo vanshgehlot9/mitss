@@ -3,6 +3,8 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Don't try to access env vars during build config evaluation
+  // They will be available at runtime
   images: {
     unoptimized: true,
     remotePatterns: [
