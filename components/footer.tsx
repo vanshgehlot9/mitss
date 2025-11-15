@@ -49,35 +49,35 @@ export default function Footer() {
           backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(212, 175, 55, 0.1) 35px, rgba(212, 175, 55, 0.1) 70px)`
         }} />
 
-        <div className="relative container mx-auto px-4 py-16">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-16">
+        <div className="relative container mx-auto px-3 sm:px-4 py-10 sm:py-12 md:py-16">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 sm:gap-10 md:gap-12 mb-10 sm:mb-12 md:mb-16">
             <div className="lg:col-span-1">
-              <div className="flex items-center gap-3 mb-6">
-                <Image src="/mitsslogo.png" alt="Mitss Logo" width={60} height={60} className="w-15 h-15" />
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-5 md:mb-6">
+                <Image src="/mitsslogo.png" alt="Mitss Logo" width={60} height={60} className="w-12 h-12 sm:w-14 sm:h-14 md:w-15 md:h-15" />
                 <div>
-                  <div className="font-serif text-2xl font-bold text-[#D4AF37]">Mitss</div>
-                  <div className="text-sm text-[#D4AF37]/70">Crafted Heritage, Modern Design</div>
+                  <div className="font-serif text-xl sm:text-2xl font-bold text-[#D4AF37]">Mitss</div>
+                  <div className="text-xs sm:text-sm text-[#D4AF37]/70">Crafted Heritage, Modern Design</div>
                 </div>
               </div>
-              <p className="text-[#FAF9F6]/70 mb-6 leading-relaxed text-sm">
+              <p className="text-[#FAF9F6]/70 mb-4 sm:mb-5 md:mb-6 leading-relaxed text-xs sm:text-sm">
                 For over 25 years, Mitss has been crafting premium solid wood furniture that transforms houses into homes.
               </p>
-              <div className="flex gap-3">
+              <div className="flex gap-2 sm:gap-3">
                 {socialLinks.map((social) => {
                   const Icon = social.icon
                   return (
-                    <motion.a key={social.label} href={social.href} aria-label={social.label} whileHover={{ scale: 1.1, y: -2 }} whileTap={{ scale: 0.95 }} className="w-10 h-10 bg-[#FAF9F6]/10 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-[#D4AF37] text-[#FAF9F6] transition-all duration-300 border border-[#FAF9F6]/20">
-                      <Icon className="w-5 h-5" />
+                    <motion.a key={social.label} href={social.href} aria-label={social.label} whileHover={{ scale: 1.1, y: -2 }} whileTap={{ scale: 0.95 }} className="w-9 h-9 sm:w-10 sm:h-10 bg-[#FAF9F6]/10 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-[#D4AF37] text-[#FAF9F6] transition-all duration-300 border border-[#FAF9F6]/20">
+                      <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                     </motion.a>
                   )
                 })}
               </div>
             </div>
 
-            <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
               <div>
-                <h3 className="font-semibold text-[#D4AF37] mb-4 text-lg">Shop</h3>
-                <ul className="space-y-3">
+                <h3 className="font-semibold text-[#D4AF37] mb-3 sm:mb-4 text-base sm:text-lg">Shop</h3>
+                <ul className="space-y-2 sm:space-y-3">
                   {footerLinks.shop.map((link) => (
                     <li key={link.name}>
                       <a href={link.href} className="text-[#FAF9F6]/70 hover:text-[#D4AF37] transition-colors text-sm inline-flex items-center group">
@@ -129,9 +129,9 @@ export default function Footer() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-[#D4AF37]/10 to-transparent border-l-4 border-[#D4AF37] rounded-lg p-6 mb-12">
-            <h3 className="font-semibold text-[#D4AF37] mb-4 text-lg">Get in Touch</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-gradient-to-r from-[#D4AF37]/10 to-transparent border-l-4 border-[#D4AF37] rounded-lg p-4 sm:p-5 md:p-6 mb-8 sm:mb-10 md:mb-12">
+            <h3 className="font-semibold text-[#D4AF37] mb-3 sm:mb-4 text-base sm:text-lg">Get in Touch</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
               <a href="tel:+919950036077" className="flex items-center gap-3 text-[#FAF9F6]/80 hover:text-[#D4AF37] transition-colors group">
                 <div className="w-10 h-10 bg-[#D4AF37]/20 rounded-lg flex items-center justify-center group-hover:bg-[#D4AF37]/30 transition-colors">
                   <Phone className="w-5 h-5 text-[#D4AF37]" />

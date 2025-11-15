@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 
 export default function Hero() {
   return (
-    <section className="relative h-screen w-full overflow-hidden">
+    <section className="relative min-h-screen h-screen w-full overflow-hidden">
       {/* Background with video */}
       <div className="absolute inset-0 z-0">
         {/* Gradient background as base */}
@@ -55,7 +55,7 @@ export default function Hero() {
                 initial={{ opacity: 0, y: 30 }} 
                 animate={{ opacity: 1, y: 0 }} 
                 transition={{ duration: 0.8, delay: 0.4 }} 
-                className="font-serif text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold text-[#FAF9F6] mb-4 sm:mb-6 leading-[1.1] tracking-tight"
+                className="font-serif text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-[#FAF9F6] mb-3 sm:mb-4 md:mb-6 leading-[1.15] sm:leading-[1.1] tracking-tight"
               >
                 Crafted by Hands,
                 <br />
@@ -68,10 +68,10 @@ export default function Hero() {
                 initial={{ opacity: 0, y: 30 }} 
                 animate={{ opacity: 1, y: 0 }} 
                 transition={{ duration: 0.8, delay: 0.6 }} 
-                className="text-lg sm:text-xl md:text-2xl text-[#FAF9F6]/90 mb-8 sm:mb-10 font-light leading-relaxed max-w-3xl"
+                className="text-base sm:text-lg md:text-xl lg:text-2xl text-[#FAF9F6]/90 mb-6 sm:mb-8 md:mb-10 font-light leading-relaxed max-w-3xl"
               >
                 Authentic wooden furniture & handicrafts by Mitss.
-                <br />
+                <br className="hidden sm:block" />
                 <span className="text-[#D4AF37] font-medium">100% Solid Wood. Zero Compromise.</span>
               </motion.p>
 
@@ -79,11 +79,11 @@ export default function Hero() {
                 initial={{ opacity: 0, y: 30 }} 
                 animate={{ opacity: 1, y: 0 }} 
                 transition={{ duration: 0.8, delay: 0.8 }} 
-                className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 mb-8 sm:mb-12"
+                className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 mb-6 sm:mb-8 md:mb-12"
               >
                 <Button 
                   size="lg" 
-                  className="group relative bg-gradient-to-r from-[#D4AF37] to-[#F4C430] hover:from-[#F4C430] hover:to-[#D4AF37] text-[#1A2642] px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg rounded-2xl shadow-2xl hover:shadow-[#D4AF37]/60 transition-all duration-500 font-semibold overflow-hidden"
+                  className="group relative bg-gradient-to-r from-[#D4AF37] to-[#F4C430] hover:from-[#F4C430] hover:to-[#D4AF37] text-[#1A2642] px-5 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 text-sm sm:text-base md:text-lg rounded-xl sm:rounded-2xl shadow-2xl hover:shadow-[#D4AF37]/60 transition-all duration-500 font-semibold overflow-hidden w-full sm:w-auto"
                 >
                   <span className="relative z-10">Explore Collection</span>
                   <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
@@ -91,7 +91,7 @@ export default function Hero() {
                 <Button 
                   size="lg" 
                   variant="outline" 
-                  className="group bg-[#FAF9F6]/5 backdrop-blur-sm border-2 border-[#FAF9F6]/30 text-[#FAF9F6] hover:bg-[#FAF9F6] hover:text-[#1A2642] hover:border-[#FAF9F6] px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg rounded-2xl transition-all duration-500 font-semibold"
+                  className="group bg-[#FAF9F6]/5 backdrop-blur-sm border-2 border-[#FAF9F6]/30 text-[#FAF9F6] hover:bg-[#FAF9F6] hover:text-[#1A2642] hover:border-[#FAF9F6] px-5 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 text-sm sm:text-base md:text-lg rounded-xl sm:rounded-2xl transition-all duration-500 font-semibold w-full sm:w-auto"
                 >
                   Custom Order
                 </Button>

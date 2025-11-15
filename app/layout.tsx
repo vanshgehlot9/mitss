@@ -103,6 +103,17 @@ export const metadata: Metadata = {
   category: 'Furniture & Home Decor',
 }
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#FAF9F6' },
+    { media: '(prefers-color-scheme: dark)', color: '#1A2642' }
+  ],
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -110,6 +121,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${poppins.variable} ${lora.variable}`} suppressHydrationWarning>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+      </head>
       <body className={`font-sans antialiased`}>
         <script
           type="application/ld+json"

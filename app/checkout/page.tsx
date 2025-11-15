@@ -213,12 +213,12 @@ export default function CheckoutPage() {
     <main className="min-h-screen bg-background">
       <Navigation />
       
-      <div className="pt-32 pb-20">
-        <div className="container mx-auto px-4 max-w-7xl">
+      <div className="pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 md:pb-20">
+        <div className="container mx-auto px-3 sm:px-4 max-w-7xl">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-5xl font-bold text-[#1A2642] mb-8 text-center"
+            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-[#1A2642] mb-6 sm:mb-8 text-center"
           >
             Checkout
           </motion.h1>
@@ -248,18 +248,18 @@ export default function CheckoutPage() {
             </motion.div>
           )}
 
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {/* Left Column - Forms */}
-            <div className="lg:col-span-2 space-y-8">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
               {/* Personal Information */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-xl p-8 shadow-sm border border-gray-100"
+                className="bg-white rounded-lg sm:rounded-xl p-4 sm:p-6 md:p-8 shadow-sm border border-gray-100"
               >
-                <div className="flex items-center gap-3 mb-6">
-                  <User className="w-6 h-6 text-[#D4AF37]" />
-                  <h2 className="text-2xl font-bold text-[#1A2642]">Personal Information</h2>
+                <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                  <User className="w-5 h-5 sm:w-6 sm:h-6 text-[#D4AF37]" />
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#1A2642]">Personal Information</h2>
                 </div>
                 
                 <div className="grid md:grid-cols-2 gap-4">

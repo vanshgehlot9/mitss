@@ -311,42 +311,42 @@ export default function PaymentPage() {
     <main className="min-h-screen bg-background">
       <Navigation />
       
-      <div className="pt-32 pb-20">
-        <div className="container mx-auto px-4 max-w-5xl">
+      <div className="pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 md:pb-20">
+        <div className="container mx-auto px-3 sm:px-4 max-w-5xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
+            className="text-center mb-8 sm:mb-10 md:mb-12"
           >
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-[#D4AF37]/10 rounded-full mb-6">
-              <Lock className="w-8 h-8 text-[#D4AF37]" />
+            <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-[#D4AF37]/10 rounded-full mb-4 sm:mb-6">
+              <Lock className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-[#D4AF37]" />
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-[#1A2642] mb-4">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-[#1A2642] mb-3 sm:mb-4">
               Secure Payment
             </h1>
-            <p className="text-[#1A2642]/60">Your information is encrypted and secure</p>
+            <p className="text-sm sm:text-base text-[#1A2642]/60">Your information is encrypted and secure</p>
           </motion.div>
 
-          <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
+          <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {/* Payment Information */}
             <div className="lg:col-span-2">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-xl p-4 sm:p-6 md:p-8 shadow-sm border border-gray-100"
+                className="bg-white rounded-lg sm:rounded-xl p-4 sm:p-6 md:p-8 shadow-sm border border-gray-100"
               >
-                <h2 className="text-xl sm:text-2xl font-bold text-[#1A2642] mb-4 sm:mb-6">Secure Payment</h2>
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#1A2642] mb-4 sm:mb-6">Secure Payment</h2>
                 
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                   {/* Payment Gateway Info */}
-                  <div className="bg-gradient-to-r from-[#D4AF37]/10 to-[#F4C430]/10 rounded-xl p-6 border-2 border-[#D4AF37]/20">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 bg-[#D4AF37] rounded-full flex items-center justify-center flex-shrink-0">
-                        <Shield className="w-6 h-6 text-white" />
+                  <div className="bg-gradient-to-r from-[#D4AF37]/10 to-[#F4C430]/10 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 border-2 border-[#D4AF37]/20">
+                    <div className="flex items-start gap-3 sm:gap-4">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#D4AF37] rounded-full flex items-center justify-center flex-shrink-0">
+                        <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-lg text-[#1A2642] mb-2">Powered by Razorpay</h3>
-                        <p className="text-[#1A2642]/70 text-sm leading-relaxed mb-3">
+                        <h3 className="font-bold text-base sm:text-lg text-[#1A2642] mb-1 sm:mb-2">Powered by Razorpay</h3>
+                        <p className="text-[#1A2642]/70 text-xs sm:text-sm leading-relaxed mb-2 sm:mb-3">
                           Complete your payment securely through Razorpay. All payment methods are supported:
                         </p>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">

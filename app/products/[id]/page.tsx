@@ -51,9 +51,9 @@ export default function ProductPage() {
     return (
       <main className="min-h-screen bg-background">
         <Navigation />
-        <div className="container mx-auto px-4 py-20 text-center">
-          <div className="text-6xl mb-4">🪑</div>
-          <p className="text-gray-600">Loading product...</p>
+        <div className="container mx-auto px-3 sm:px-4 py-16 sm:py-20 text-center">
+          <div className="text-4xl sm:text-5xl md:text-6xl mb-3 sm:mb-4">🪑</div>
+          <p className="text-sm sm:text-base text-gray-600">Loading product...</p>
         </div>
         <Footer />
       </main>
@@ -64,10 +64,10 @@ export default function ProductPage() {
     return (
       <main className="min-h-screen bg-background">
         <Navigation />
-        <div className="container mx-auto px-4 py-20 text-center">
-          <h1 className="text-4xl font-bold mb-4">Product Not Found</h1>
-          <p className="text-gray-600 mb-6">The product you're looking for doesn't exist.</p>
-          <a href="/products" className="text-[#D4AF37] hover:underline">
+        <div className="container mx-auto px-3 sm:px-4 py-16 sm:py-20 text-center">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">Product Not Found</h1>
+          <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">The product you're looking for doesn't exist.</p>
+          <a href="/products" className="text-sm sm:text-base text-[#D4AF37] hover:underline">
             Back to Products
           </a>
         </div>

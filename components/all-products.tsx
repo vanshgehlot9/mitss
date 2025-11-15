@@ -217,14 +217,14 @@ export default function AllProducts() {
   return (
     <>
       {/* Header Section with Breadcrumbs */}
-      <div className="bg-[#1A2642] text-white py-12 pt-32">
-        <div className="container mx-auto px-4">
+      <div className="bg-[#1A2642] text-white py-8 sm:py-10 md:py-12 pt-24 sm:pt-28 md:pt-32">
+        <div className="container mx-auto px-3 sm:px-4">
           {/* Breadcrumbs */}
-          <nav className="flex items-center space-x-2 text-sm mb-4">
+          <nav className="flex items-center space-x-1.5 sm:space-x-2 text-xs sm:text-sm mb-3 sm:mb-4">
             <Link href="/" className="hover:text-[#D4AF37] transition-colors">
               Home
             </Link>
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
             <span className="text-[#D4AF37]">All Products</span>
             {selectedCategories.length === 1 && (
               <>
@@ -234,8 +234,8 @@ export default function AllProducts() {
             )}
           </nav>
           
-          <div className="flex items-center justify-between">
-            <h1 className="text-4xl md:text-5xl font-bold">
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold">
               All <span className="text-[#D4AF37]">Products</span>
             </h1>
             
@@ -243,12 +243,12 @@ export default function AllProducts() {
             {compareList.length > 0 && (
               <Button 
                 variant="outline" 
-                className="border-[#D4AF37] text-white hover:bg-[#D4AF37] relative"
+                className="border-[#D4AF37] text-white hover:bg-[#D4AF37] relative text-xs sm:text-sm px-2 sm:px-4 h-8 sm:h-10"
                 onClick={() => router.push('/compare')}
               >
-                <LayoutGrid className="w-5 h-5 mr-2" />
-                Compare
-                <Badge className="absolute -top-2 -right-2 bg-blue-500 text-white px-2 py-0.5 text-xs">
+                <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
+                <span className="hidden sm:inline">Compare</span>
+                <Badge className="absolute -top-2 -right-2 bg-blue-500 text-white px-1.5 py-0.5 text-xs">
                   {compareList.length}
                 </Badge>
               </Button>
@@ -259,21 +259,21 @@ export default function AllProducts() {
 
       {/* Loading State */}
       {loading && (
-        <div className="container mx-auto px-4 py-20">
+        <div className="container mx-auto px-3 sm:px-4 py-12 sm:py-16 md:py-20">
           <div className="flex flex-col items-center justify-center">
-            <Loader2 className="w-12 h-12 text-[#D4AF37] animate-spin mb-4" />
-            <p className="text-gray-600">Loading products...</p>
+            <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-[#D4AF37] animate-spin mb-3 sm:mb-4" />
+            <p className="text-sm sm:text-base text-gray-600">Loading products...</p>
           </div>
         </div>
       )}
 
       {/* No Products State */}
       {!loading && products.length === 0 && (
-        <div className="container mx-auto px-4 py-20">
+        <div className="container mx-auto px-3 sm:px-4 py-12 sm:py-16 md:py-20">
           <div className="flex flex-col items-center justify-center text-center">
-            <div className="text-6xl mb-4">🪑</div>
-            <h2 className="text-2xl font-bold text-[#1A2642] mb-2">No Products Found</h2>
-            <p className="text-gray-600 mb-6">
+            <div className="text-4xl sm:text-5xl md:text-6xl mb-3 sm:mb-4">🪑</div>
+            <h2 className="text-xl sm:text-2xl font-bold text-[#1A2642] mb-2">No Products Found</h2>
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
               Check back soon for our exclusive furniture collection!
             </p>
           </div>
@@ -283,9 +283,9 @@ export default function AllProducts() {
       {!loading && products.length > 0 && (
       <>
       {/* Main Content */}
-      <div className="bg-background py-8">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col lg:flex-row gap-8">
+      <div className="bg-background py-6 sm:py-8">
+        <div className="container mx-auto px-3 sm:px-4">
+          <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
             {/* Mobile Filter Toggle */}
             <div className="lg:hidden">
               <Button

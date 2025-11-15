@@ -60,9 +60,9 @@ export default function Navigation() {
           {/* Logo */}
           <Link 
             href="/" 
-            className="flex items-center gap-3 flex-shrink-0" 
+            className="flex items-center gap-2 sm:gap-3 flex-shrink-0" 
           >
-            <div className="relative w-10 h-10 rounded-lg overflow-hidden">
+            <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden flex-shrink-0">
               <Image
                 src="/mitsslogo.png"
                 alt="Mitss Logo"
@@ -71,9 +71,9 @@ export default function Navigation() {
                 priority
               />
             </div>
-            <div className="hidden sm:block">
-              <div className="font-serif text-lg font-bold text-[#D4AF37]">Mitss</div>
-              <div className="text-[9px] text-[#FAF9F6]/50 tracking-wider uppercase -mt-1">Crafted Heritage</div>
+            <div>
+              <div className="font-serif text-base sm:text-lg font-bold text-[#D4AF37]">Mitss</div>
+              <div className="text-[8px] sm:text-[9px] text-[#FAF9F6]/50 tracking-wider uppercase -mt-1 hidden xs:block">Crafted Heritage</div>
             </div>
           </Link>
 
@@ -114,14 +114,14 @@ export default function Navigation() {
           </div>
 
           {/* Right Icons */}
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
             <Button 
               variant="ghost" 
               size="icon" 
-              className="text-[#FAF9F6] hover:text-[#D4AF37] hover:bg-transparent"
+              className="text-[#FAF9F6] hover:text-[#D4AF37] hover:bg-transparent w-9 h-9 sm:w-10 sm:h-10"
               onClick={() => setSearchOpen(true)}
             >
-              <Search className="w-5 h-5" />
+              <Search className="w-4 h-4 sm:w-5 sm:h-5" />
             </Button>
             <Link href="/account">
               <Button 
@@ -146,8 +146,8 @@ export default function Navigation() {
 
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild className="lg:hidden">
-                <Button variant="ghost" size="icon" className="text-[#FAF9F6] hover:text-[#D4AF37]">
-                  <Menu className="w-6 h-6" />
+                <Button variant="ghost" size="icon" className="text-[#FAF9F6] hover:text-[#D4AF37] w-9 h-9 sm:w-10 sm:h-10">
+                  <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="bg-[#1A2642] text-[#FAF9F6] w-[300px]">
