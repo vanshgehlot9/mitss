@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import clientPromise from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
+import { initialProducts } from '@/lib/initial-products'
 
 export async function GET(
   request: NextRequest,
@@ -26,10 +27,31 @@ export async function GET(
       data: product
     })
   } catch (error) {
-    console.error('Error fetching product:', error)
+    console.error('MongoDB Error - Using fallback for product:', error)
+    
+    // FALLBACK: Try to find product in initial products
+    const { id } = await params
+    
+    // Try to parse as numeric ID first
+    const numericId = parseInt(id)
+    if (!isNaN(numericId) && numericId > 0 && numericId <= initialProducts.length) {
+      const product = {
+        ...initialProducts[numericId - 1],
+        id: numericId,
+        _id: `fallback-${numericId}`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      return NextResponse.json({
+        success: true,
+        data: product,
+        fallback: true
+      })
+    }
+    
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch product' },
-      { status: 500 }
+      { success: false, error: 'Product not found' },
+      { status: 404 }
     )
   }
 }

@@ -6,6 +6,12 @@ import { initialProducts } from '@/lib/initial-products'
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+  // Get query parameters
+  const { searchParams } = new URL(request.url)
+  const category = searchParams.get('category')
+  const limit = parseInt(searchParams.get('limit') || '50')
+  const skip = parseInt(searchParams.get('skip') || '0')
+
   try {
     const client = await clientPromise()
     const db = client.db(process.env.DATABASE_NAME || 'default')
@@ -15,20 +21,15 @@ export async function GET(request: NextRequest) {
     const totalProducts = await products.countDocuments()
     if (totalProducts === 0) {
       console.log('No products found, auto-seeding...')
-      const productsWithTimestamps = initialProducts.map(product => ({
+      const productsWithTimestamps = initialProducts.map((product, index) => ({
         ...product,
+        id: index + 1,
         createdAt: new Date(),
         updatedAt: new Date(),
       }))
       await products.insertMany(productsWithTimestamps)
       console.log(`Auto-seeded ${productsWithTimestamps.length} products`)
     }
-
-    // Get query parameters
-    const { searchParams } = new URL(request.url)
-    const category = searchParams.get('category')
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const skip = parseInt(searchParams.get('skip') || '0')
 
     // Build query
     const query: any = {}
@@ -54,11 +55,34 @@ export async function GET(request: NextRequest) {
       skip
     })
   } catch (error) {
-    console.error('Error fetching products:', error)
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch products' },
-      { status: 500 }
-    )
+    console.error('MongoDB Error - Using fallback products:', error)
+    
+    // FALLBACK: Return initial products if MongoDB fails
+    const productsWithIds = initialProducts.map((product, index) => ({
+      ...product,
+      id: index + 1,
+      _id: `fallback-${index + 1}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }))
+
+    // Apply category filter if provided
+    let filteredProducts = productsWithIds
+    if (category) {
+      filteredProducts = productsWithIds.filter(p => p.category === category)
+    }
+
+    // Apply pagination
+    const paginatedProducts = filteredProducts.slice(skip, skip + limit)
+
+    return NextResponse.json({
+      success: true,
+      data: paginatedProducts,
+      total: filteredProducts.length,
+      limit,
+      skip,
+      fallback: true // Indicate this is fallback data
+    })
   }
 }
 
