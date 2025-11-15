@@ -135,17 +135,6 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                 </div>
               )}
             </div>
-
-            {/* Thumbnail Gallery */}
-            <div className="grid grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="aspect-square rounded-lg bg-gradient-to-br from-[#1A2642] to-[#2A3652] border border-border cursor-pointer hover:border-[#D4AF37] transition-colors">
-                  <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-3xl opacity-30">🪑</span>
-                  </div>
-                </div>
-              ))}
-            </div>
           </motion.div>
 
           {/* Product Info */}

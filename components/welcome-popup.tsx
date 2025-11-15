@@ -50,13 +50,10 @@ export default function WelcomePopup() {
         }),
       })
 
-      if (response.ok) {
-        // Mark as submitted in localStorage
-        localStorage.setItem("mitss_phone_submitted", "true")
-        setIsOpen(false)
-      } else {
-        setError("Something went wrong. Please try again.")
-      }
+      // Always save locally and close popup, regardless of API response
+      localStorage.setItem("mitss_phone_submitted", "true")
+      localStorage.setItem("mitss_phone_number", phoneNumber)
+      setIsOpen(false)
     } catch (err) {
       // Even if API fails, save locally and close popup
       console.log("Phone number:", phoneNumber)
