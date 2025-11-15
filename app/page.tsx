@@ -5,7 +5,6 @@ import Categories from "@/components/categories"
 import FeaturedProducts from "@/components/featured-products"
 import DecorShowcase from "@/components/decor-showcase"
 import CraftStories from "@/components/craft-stories"
-import HomeDecorSection from "@/components/home-decor-section"
 import AboutStory from "@/components/about-story"
 import Testimonials from "@/components/testimonials"
 import Gallery from "@/components/gallery"
@@ -20,7 +19,6 @@ export default function Home() {
       <FeaturedProducts />
       <DecorShowcase />
       <CraftStories />
-      <HomeDecorSection />
       <AboutStory />
       <Testimonials />
       <Gallery />

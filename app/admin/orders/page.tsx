@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { collection, getDocs, doc, updateDoc, query, orderBy, writeBatch } from 'firebase/firestore'
+import { useEffect, useState, useRef } from 'react'
+import { doc, updateDoc, writeBatch } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -97,6 +97,7 @@ export default function OrdersPage() {
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const ordersPerPage = 10
+  const previousOrdersCount = useRef(0)
 
   useEffect(() => {
     loadOrders()
@@ -108,23 +109,29 @@ export default function OrdersPage() {
 
   const loadOrders = async () => {
     try {
-      const ordersQuery = query(
-        collection(db, 'orders'),
-        orderBy('createdAt', 'desc')
-      )
-      const snapshot = await getDocs(ordersQuery)
-      const ordersData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate(),
-        updatedAt: doc.data().updatedAt?.toDate()
+      setLoading(true)
+      
+      // Fetch orders from API (much faster than direct Firestore)
+      const response = await fetch('/api/admin/orders?limit=100')
+      const data = await response.json()
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to load orders')
+      }
+
+      const ordersData = data.orders.map((order: any) => ({
+        ...order,
+        createdAt: new Date(order.createdAt),
+        updatedAt: order.updatedAt ? new Date(order.updatedAt) : undefined
       })) as Order[]
 
+      console.log(`Loaded ${ordersData.length} orders from API`)
       setOrders(ordersData)
       setFilteredOrders(ordersData)
-    } catch (error) {
+      previousOrdersCount.current = ordersData.length
+    } catch (error: any) {
       console.error('Error loading orders:', error)
-      toast.error('Failed to load orders')
+      toast.error('Failed to load orders: ' + error.message)
     } finally {
       setLoading(false)
     }
@@ -251,6 +258,80 @@ export default function OrdersPage() {
     toast.success('Orders exported successfully')
   }
 
+  const exportMonthlyProductSales = () => {
+    // Get current month
+    const now = new Date()
+    const currentMonth = now.getMonth()
+    const currentYear = now.getFullYear()
+    
+    // Filter orders from current month
+    const monthlyOrders = orders.filter(order => {
+      const orderDate = new Date(order.createdAt)
+      return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear
+    })
+
+    // Aggregate product sales
+    const productSales = new Map()
+    
+    monthlyOrders.forEach(order => {
+      order.items?.forEach(item => {
+        const key = item.name
+        if (productSales.has(key)) {
+          const existing = productSales.get(key)
+          existing.quantity += item.quantity
+          existing.revenue += item.price * item.quantity
+          existing.orders += 1
+        } else {
+          productSales.set(key, {
+            name: item.name,
+            quantity: item.quantity,
+            revenue: item.price * item.quantity,
+            unitPrice: item.price,
+            orders: 1
+          })
+        }
+      })
+    })
+
+    // Convert to array and sort by revenue
+    const salesData = Array.from(productSales.values()).sort((a, b) => b.revenue - a.revenue)
+
+    // Create CSV
+    const monthName = now.toLocaleString('en-IN', { month: 'long', year: 'numeric' })
+    const headers = ['Product Name', 'Units Sold', 'Unit Price (₹)', 'Total Revenue (₹)', 'Number of Orders']
+    const rows = salesData.map(item => [
+      item.name,
+      item.quantity,
+      item.unitPrice,
+      item.revenue,
+      item.orders
+    ])
+
+    // Add summary row
+    const totalQuantity = salesData.reduce((sum, item) => sum + item.quantity, 0)
+    const totalRevenue = salesData.reduce((sum, item) => sum + item.revenue, 0)
+    rows.push([])
+    rows.push(['TOTAL', totalQuantity, '', totalRevenue, monthlyOrders.length])
+
+    const csv = [
+      [`Monthly Product Sales Report - ${monthName}`],
+      [`Generated on: ${now.toLocaleString('en-IN')}`],
+      [`Company: MITSS - A Brand of Modern Art Implex`],
+      [`GST No: 08ASBPJ4635M1ZI`],
+      [],
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n')
+
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `monthly-product-sales-${currentYear}-${String(currentMonth + 1).padStart(2, '0')}.csv`
+    a.click()
+    toast.success(`Monthly sales report exported (${monthName})`)
+  }
+
   const printInvoice = (order: Order) => {
     const invoiceWindow = window.open('', '_blank')
     if (!invoiceWindow) return
@@ -261,24 +342,41 @@ export default function OrdersPage() {
         <head>
           <title>Invoice - ${order.id}</title>
           <style>
-            body { font-family: Arial, sans-serif; padding: 40px; }
-            .header { text-align: center; margin-bottom: 30px; }
-            .company { font-size: 24px; font-weight: bold; color: #D4AF37; }
+            body { font-family: Arial, sans-serif; padding: 40px; max-width: 900px; margin: 0 auto; }
+            .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #D4AF37; padding-bottom: 20px; }
+            .company { font-size: 28px; font-weight: bold; color: #D4AF37; margin-bottom: 5px; }
+            .brand-tagline { font-size: 14px; color: #666; margin-bottom: 5px; }
+            .gst-number { font-size: 12px; color: #333; font-weight: 600; margin-top: 5px; }
+            .invoice-title { font-size: 24px; font-weight: bold; margin: 20px 0; }
             .invoice-details { display: flex; justify-content: space-between; margin: 30px 0; }
+            .invoice-details > div { flex: 1; }
             .section { margin: 20px 0; }
             .section-title { font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid #D4AF37; padding-bottom: 5px; }
             table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-            th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
-            th { background: #f5f5f5; }
-            .total { font-size: 18px; font-weight: bold; text-align: right; margin-top: 20px; }
-            .footer { margin-top: 50px; text-align: center; color: #666; }
+            th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+            th { background: #f5f5f5; font-weight: 600; }
+            .text-right { text-align: right; }
+            .total-section { margin-top: 20px; }
+            .total-row { display: flex; justify-content: flex-end; padding: 8px 0; }
+            .total-row .label { margin-right: 40px; min-width: 120px; text-align: right; }
+            .total-row .value { min-width: 150px; text-align: right; }
+            .grand-total { font-size: 20px; font-weight: bold; color: #D4AF37; border-top: 2px solid #D4AF37; padding-top: 10px; margin-top: 10px; }
+            .footer { margin-top: 50px; padding-top: 20px; border-top: 2px solid #eee; text-align: center; color: #666; }
+            .footer-note { font-size: 12px; margin-top: 10px; }
+            @media print {
+              body { padding: 20px; }
+              .no-print { display: none; }
+            }
           </style>
         </head>
         <body>
           <div class="header">
             <div class="company">MITSS</div>
-            <p>Premium Handicrafts & Wooden Furniture</p>
+            <div class="brand-tagline">A Brand of Modern Art Implex</div>
+            <div class="gst-number">GST No: 08ASBPJ4635M1ZI</div>
           </div>
+          
+          <div class="invoice-title">TAX INVOICE</div>
           
           <div class="invoice-details">
             <div>
@@ -325,17 +423,51 @@ export default function OrdersPage() {
             </table>
           </div>
 
-          <div class="total">
-            ${order.subtotal ? `<div>Subtotal: ₹${order.subtotal.toLocaleString('en-IN')}</div>` : ''}
-            ${order.shippingCost ? `<div>Shipping: ₹${order.shippingCost.toLocaleString('en-IN')}</div>` : ''}
-            ${order.tax ? `<div>Tax: ₹${order.tax.toLocaleString('en-IN')}</div>` : ''}
-            ${order.discount ? `<div>Discount: -₹${order.discount.toLocaleString('en-IN')}</div>` : ''}
-            <div style="font-size: 20px; margin-top: 10px; color: #D4AF37;">Grand Total: ₹${order.total.toLocaleString('en-IN')}</div>
+          <div class="total-section">
+            ${order.subtotal ? `
+              <div class="total-row">
+                <div class="label">Subtotal:</div>
+                <div class="value">₹${order.subtotal.toLocaleString('en-IN')}</div>
+              </div>
+            ` : ''}
+            ${order.shippingCost ? `
+              <div class="total-row">
+                <div class="label">Shipping:</div>
+                <div class="value">₹${order.shippingCost.toLocaleString('en-IN')}</div>
+              </div>
+            ` : ''}
+            ${order.tax ? `
+              <div class="total-row">
+                <div class="label">GST (18%):</div>
+                <div class="value">₹${order.tax.toLocaleString('en-IN')}</div>
+              </div>
+            ` : ''}
+            ${order.discount ? `
+              <div class="total-row">
+                <div class="label">Discount:</div>
+                <div class="value" style="color: #ef4444;">-₹${order.discount.toLocaleString('en-IN')}</div>
+              </div>
+            ` : ''}
+            <div class="total-row grand-total">
+              <div class="label">Grand Total:</div>
+              <div class="value">₹${order.total.toLocaleString('en-IN')}</div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Payment Information</div>
+            <p><strong>Payment Method:</strong> ${order.paymentMethod || 'Not specified'}</p>
+            <p><strong>Payment Status:</strong> ${order.paymentStatus || 'Pending'}</p>
+            ${order.trackingNumber ? `<p><strong>Tracking Number:</strong> ${order.trackingNumber}</p>` : ''}
           </div>
 
           <div class="footer">
-            <p>Thank you for your business!</p>
-            <p>For queries, contact: support@mitss.com</p>
+            <p style="font-weight: 600; font-size: 16px;">Thank you for shopping with MITSS!</p>
+            <p class="footer-note">For queries or support, contact us at:</p>
+            <p class="footer-note">Email: info@mitss.store | Phone: +91 99500 36077</p>
+            <p class="footer-note" style="margin-top: 15px; font-size: 11px;">
+              This is a computer-generated invoice and does not require a signature.
+            </p>
           </div>
         </body>
       </html>
@@ -408,8 +540,31 @@ export default function OrdersPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="space-y-2">
+            <div className="h-8 w-64 bg-gray-200 animate-pulse rounded"></div>
+            <div className="h-4 w-48 bg-gray-200 animate-pulse rounded"></div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+          {[...Array(7)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <div className="h-16 bg-gray-200 animate-pulse rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-20 bg-gray-200 animate-pulse rounded"></div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -420,12 +575,16 @@ export default function OrdersPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold">Order Management</h1>
-            <p className="text-gray-500 mt-1">Manage and track all customer orders</p>
+            <p className="text-gray-500 mt-1">Manage and track all customer orders (Recent 100 orders)</p>
           </div>
           <div className="flex gap-2">
             <Button onClick={exportToCSV} variant="outline">
               <Download className="h-4 w-4 mr-2" />
-              Export CSV
+              Export Orders
+            </Button>
+            <Button onClick={exportMonthlyProductSales} variant="outline" className="bg-green-50 hover:bg-green-100">
+              <FileText className="h-4 w-4 mr-2" />
+              Monthly Sales Report
             </Button>
           </div>
         </div>

@@ -33,24 +33,34 @@ export default function CartDrawer() {
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-lg flex flex-col">
-        <SheetHeader>
-          <SheetTitle className="text-2xl font-bold flex items-center gap-2">
-            <ShoppingCart className="w-6 h-6 text-[#D4AF37]" />
-            Shopping Cart
+      <SheetContent className="w-full sm:max-w-lg flex flex-col bg-[#FAF9F6]">
+        <SheetHeader className="border-b pb-4">
+          <SheetTitle className="text-2xl font-bold flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-[#D4AF37] to-[#F4C430] flex items-center justify-center">
+              <ShoppingCart className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <div className="text-[#1A2642]">Shopping Cart</div>
+              {cart.length > 0 && (
+                <div className="text-sm font-normal text-gray-500">{getTotalItems()} {getTotalItems() === 1 ? 'item' : 'items'}</div>
+              )}
+            </div>
           </SheetTitle>
         </SheetHeader>
 
         {cart.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <div className="w-32 h-32 rounded-full bg-muted flex items-center justify-center mb-6">
-              <ShoppingCart className="w-16 h-16 text-muted-foreground" />
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-[#F5EFE7] to-[#E8DCC4] flex items-center justify-center mb-6">
+              <ShoppingCart className="w-16 h-16 text-[#D4AF37]" />
             </div>
-            <h3 className="text-xl font-bold mb-2">Your cart is empty</h3>
-            <p className="text-muted-foreground mb-6">Add some beautiful furniture to get started!</p>
-            <Button onClick={() => setOpen(false)} className="bg-[#D4AF37] hover:bg-[#B8941F]">
-              Continue Shopping
-            </Button>
+            <h3 className="text-2xl font-bold text-[#1A2642] mb-2">Your cart is empty</h3>
+            <p className="text-gray-600 mb-6">Add some beautiful furniture pieces to get started!</p>
+            <Link href="/products" onClick={() => setOpen(false)} className="w-full max-w-xs">
+              <Button className="w-full bg-gradient-to-r from-[#D4AF37] to-[#F4C430] hover:from-[#B8941F] hover:to-[#D4AF37] text-white h-12 font-semibold">
+                Browse Products
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </Link>
           </div>
         ) : (
           <>
@@ -62,50 +72,72 @@ export default function CartDrawer() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20 }}
-                    className="flex gap-4 mb-4 p-4 bg-muted/30 rounded-lg"
+                    className="flex gap-3 mb-3 p-3 bg-white border border-gray-100 rounded-lg hover:shadow-md transition-shadow"
                   >
-                    <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gradient-to-br from-[#1A2642] to-[#2A3652] flex-shrink-0">
-                      <span className="text-4xl absolute inset-0 flex items-center justify-center">
-                        🪑
-                      </span>
+                    <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-gradient-to-br from-[#F5EFE7] to-[#E8DCC4] flex-shrink-0">
+                      {item.image ? (
+                        <Image
+                          src={item.image}
+                          alt={item.name}
+                          fill
+                          className="object-cover"
+                          sizes="96px"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-4xl opacity-40">🪑</span>
+                        </div>
+                      )}
                     </div>
 
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-sm mb-1 truncate">{item.name}</h4>
-                      <p className="text-xs text-muted-foreground mb-2">{item.category}</p>
+                    <div className="flex-1 min-w-0 flex flex-col justify-between">
+                      <div>
+                        <h4 className="font-semibold text-sm mb-1 line-clamp-2 text-[#1A2642]">{item.name}</h4>
+                        <p className="text-xs text-[#D4AF37] font-medium mb-2">{item.category}</p>
+                      </div>
                       <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        >
-                          <Minus className="w-3 h-3" />
-                        </Button>
-                        <span className="text-sm font-semibold w-8 text-center">{item.quantity}</span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        >
-                          <Plus className="w-3 h-3" />
-                        </Button>
+                        <div className="flex items-center gap-1 border border-gray-200 rounded-md">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-gray-100"
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            disabled={item.quantity <= 1}
+                          >
+                            <Minus className="w-3 h-3" />
+                          </Button>
+                          <span className="text-sm font-semibold w-8 text-center">{item.quantity}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-gray-100"
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          >
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                        </div>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 ml-auto text-red-500 hover:text-red-600 hover:bg-red-50"
+                          className="h-8 w-8 ml-auto text-red-500 hover:text-red-600 hover:bg-red-50"
                           onClick={() => removeFromCart(item.id)}
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>
 
-                    <div className="text-right">
-                      <p className="font-bold text-[#D4AF37]">₹{item.price.toLocaleString('en-IN')}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        ₹{(item.price * item.quantity).toLocaleString('en-IN')}
+                    <div className="text-right flex flex-col justify-between">
+                      <div>
+                        <p className="text-xs text-gray-500 line-through mb-1">
+                          ₹{((item.price * 1.5) * item.quantity).toLocaleString('en-IN')}
+                        </p>
+                        <p className="font-bold text-[#D4AF37] text-lg">
+                          ₹{(item.price * item.quantity).toLocaleString('en-IN')}
+                        </p>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        ₹{item.price.toLocaleString('en-IN')} each
                       </p>
                     </div>
                   </motion.div>
@@ -113,30 +145,46 @@ export default function CartDrawer() {
               </AnimatePresence>
             </div>
 
-            <div className="border-t pt-4 space-y-4">
-              <div className="flex items-center justify-between text-lg font-bold">
-                <span>Total:</span>
-                <span className="text-2xl text-[#D4AF37]">₹{getTotalPrice().toLocaleString('en-IN')}</span>
+            <div className="border-t pt-4 space-y-4 bg-white">
+              <div className="bg-gradient-to-r from-[#F5EFE7] to-[#E8DCC4] rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-600">Subtotal ({getTotalItems()} items)</span>
+                  <span className="font-semibold text-[#1A2642]">₹{getTotalPrice().toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-600">Shipping</span>
+                  <span className="font-semibold text-green-600">FREE</span>
+                </div>
+                <div className="border-t border-gray-300 my-2"></div>
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-bold text-[#1A2642]">Total:</span>
+                  <span className="text-2xl font-bold text-[#D4AF37]">₹{getTotalPrice().toLocaleString('en-IN')}</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-2 text-center">All taxes included</p>
               </div>
 
               <div className="space-y-2">
-                <Link href="/checkout" onClick={() => setOpen(false)}>
-                  <Button className="w-full bg-[#D4AF37] hover:bg-[#B8941F] text-white h-12 text-lg">
+                <Link href="/checkout" onClick={() => setOpen(false)} className="block">
+                  <Button className="w-full bg-gradient-to-r from-[#D4AF37] to-[#F4C430] hover:from-[#B8941F] hover:to-[#D4AF37] text-white h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all">
                     Proceed to Checkout
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </Link>
-                <Button variant="outline" className="w-full" onClick={() => setOpen(false)}>
+                <Button variant="outline" className="w-full border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-white" onClick={() => setOpen(false)}>
                   Continue Shopping
                 </Button>
               </div>
 
-              <p className="text-xs text-center text-muted-foreground">
-                🔒 Secure checkout powered by{" "}
-                <a href="https://www.shivkaradigital.com" target="_blank" rel="noopener noreferrer" className="text-[#D4AF37] hover:underline">
-                  Shivkara Digital
-                </a>
-              </p>
+              <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
+                <div className="flex items-center gap-1">
+                  <span>🔒</span>
+                  <span>Secure Checkout</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span>📦</span>
+                  <span>Free Shipping</span>
+                </div>
+              </div>
             </div>
           </>
         )}

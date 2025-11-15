@@ -15,7 +15,7 @@ const footerLinks = {
   company: [
     { name: "About Us", href: "#about" },
     { name: "Our Artisans", href: "#testimonials" },
-    { name: "Gift Registry", href: "/gift-registry" },
+    { name: "Custom Design", href: "/custom-design" },
   ],
   support: [
     { name: "Help Center", href: "/help-center" },

@@ -129,8 +129,8 @@ export default function OrderConfirmationPage() {
             <h2 className="text-2xl font-bold text-[#1A2642] mb-6">Order Details</h2>
             
             <div className="space-y-4 mb-6">
-              {cart.map((item: any) => (
-                <div key={item.id} className="flex gap-4 pb-4 border-b border-gray-100 last:border-0">
+              {cart.map((item: any, index: number) => (
+                <div key={`${item.id}-${index}`} className="flex gap-4 pb-4 border-b border-gray-100 last:border-0">
                   <div className="w-20 h-20 bg-[#FAF9F6] rounded-lg flex items-center justify-center text-3xl">
                     {item.image}
                   </div>
@@ -155,15 +155,15 @@ export default function OrderConfirmationPage() {
               </div>
               <div className="flex justify-between text-[#1A2642]/70">
                 <span>Shipping</span>
-                <span>{pricing.shipping === 0 ? 'FREE' : `₹${pricing.shipping.toLocaleString('en-IN')}`}</span>
+                <span>{pricing?.shipping === 0 ? 'FREE' : `₹${(pricing?.shipping || 0).toLocaleString('en-IN')}`}</span>
               </div>
               <div className="flex justify-between text-[#1A2642]/70">
                 <span>GST (18%)</span>
-                <span>₹{pricing.gst.toLocaleString('en-IN')}</span>
+                <span>₹{(pricing?.gst || 0).toLocaleString('en-IN')}</span>
               </div>
               <div className="flex justify-between text-xl font-bold text-[#1A2642] pt-2 border-t">
                 <span>Total Paid</span>
-                <span className="text-[#D4AF37]">₹{pricing.total.toLocaleString('en-IN')}</span>
+                <span className="text-[#D4AF37]">₹{(pricing?.total || 0).toLocaleString('en-IN')}</span>
               </div>
             </div>
           </motion.div>
@@ -210,6 +210,31 @@ export default function OrderConfirmationPage() {
               </div>
             </div>
           </motion.div>
+
+          {/* Guest User Notice */}
+          {orderData.isGuest && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.65 }}
+              className="bg-[#D4AF37]/10 border-l-4 border-[#D4AF37] p-6 rounded-r-lg mb-8"
+            >
+              <div className="flex items-start gap-3">
+                <Package className="w-6 h-6 text-[#D4AF37] flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="font-bold text-[#1A2642] mb-2">Track Your Order</h3>
+                  <p className="text-[#1A2642]/70 text-sm mb-3">
+                    Save your Order ID: <span className="font-mono font-bold text-[#D4AF37]">{orderId}</span> to track your order status.
+                  </p>
+                  <Link href="/track-order">
+                    <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-white">
+                      Track Order Status
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          )}
 
           {/* Action Buttons */}
           <motion.div

@@ -15,19 +15,27 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import Link from "next/link"
 import { toast } from "sonner"
+import { getStatesList, getDistrictsList, getPincode } from "@/lib/pincode-data"
+import { Select } from "@/components/ui/select-native"
 
 export default function CheckoutPage() {
   const { cart, getTotalPrice } = useCart()
   const { user, userData } = useAuth()
   const router = useRouter()
+  const [isGuestCheckout, setIsGuestCheckout] = useState(false)
 
-  // Redirect to login if not authenticated
+  // Helper function to get product ID (works with both _id and id)
+  const getProductId = (product: any): string => {
+    return product._id?.toString() || product.id?.toString() || ''
+  }
+
+  // Check if cart is empty
   useEffect(() => {
-    if (!user) {
-      toast.error("Please login to continue checkout")
-      router.push("/account?redirect=/checkout")
+    if (cart.length === 0) {
+      toast.error("Your cart is empty")
+      router.push("/products")
     }
-  }, [user, router])
+  }, [cart, router])
   
   const [formData, setFormData] = useState({
     // Personal Info - prefill from user data
@@ -40,6 +48,7 @@ export default function CheckoutPage() {
     address: "",
     apartment: "",
     city: "",
+    district: "",
     state: "",
     pincode: "",
     landmark: "",
@@ -56,9 +65,10 @@ export default function CheckoutPage() {
     gstNumber: "",
   })
 
-  // Load user data when available
+  // Load user data when available (only for logged in users)
   useEffect(() => {
-    if (userData) {
+    if (user && userData) {
+      setIsGuestCheckout(false)
       setFormData(prev => ({
         ...prev,
         firstName: userData.displayName?.split(' ')[0] || '',
@@ -79,18 +89,55 @@ export default function CheckoutPage() {
           phone: defaultAddress.phone,
         }))
       }
+    } else {
+      // Guest checkout
+      setIsGuestCheckout(true)
     }
-  }, [userData])
+  }, [user, userData])
 
   const [agreedToTerms, setAgreedToTerms] = useState(false)
+  const [availableDistricts, setAvailableDistricts] = useState<string[]>([])
 
   const subtotal = getTotalPrice()
-  const shipping = subtotal >= 25000 ? 0 : 1500
-  const gst = Math.round(subtotal * 0.18) // 18% GST
-  const total = subtotal + shipping + gst
+  const shipping = 0 // Free shipping on all orders
+  const gst = 0 // GST is already included in product prices
+  const total = subtotal + shipping
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
+  }
+
+  const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedState = e.target.value
+    setFormData({ 
+      ...formData, 
+      state: selectedState,
+      district: '',
+      pincode: ''
+    })
+    
+    if (selectedState) {
+      const districts = getDistrictsList(selectedState)
+      setAvailableDistricts(districts)
+    } else {
+      setAvailableDistricts([])
+    }
+  }
+
+  const handleDistrictChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedDistrict = e.target.value
+    const pincode = getPincode(formData.state, selectedDistrict)
+    
+    setFormData({
+      ...formData,
+      district: selectedDistrict,
+      city: selectedDistrict, // Auto-fill city with district name
+      pincode: pincode
+    })
+    
+    if (pincode) {
+      toast.success(`Pincode ${pincode} auto-filled for ${selectedDistrict}`)
+    }
   }
 
   const validateForm = () => {
@@ -120,11 +167,21 @@ export default function CheckoutPage() {
   const handleProceedToPayment = () => {
     if (!validateForm()) return
 
-    // Save checkout data to localStorage
+    // Calculate GST (18% of subtotal)
+    const gst = Math.round((subtotal * 0.18) * 100) / 100
+
+    // Save checkout data to localStorage (works for both guest and logged-in users)
     localStorage.setItem("checkoutData", JSON.stringify({
       formData,
       cart,
-      pricing: { subtotal, shipping, gst, total }
+      pricing: { 
+        subtotal, 
+        shipping, 
+        gst,
+        total 
+      },
+      isGuest: isGuestCheckout,
+      userId: user?.uid || null
     }))
 
     // Navigate to payment page
@@ -161,10 +218,35 @@ export default function CheckoutPage() {
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-5xl font-bold text-[#1A2642] mb-12 text-center"
+            className="text-4xl md:text-5xl font-bold text-[#1A2642] mb-8 text-center"
           >
             Checkout
           </motion.h1>
+
+          {/* Guest Checkout Info Banner */}
+          {isGuestCheckout && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-[#D4AF37]/10 border border-[#D4AF37]/30 rounded-xl p-6 mb-8"
+            >
+              <div className="flex items-start gap-4">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-[#1A2642] mb-2">
+                    Checking out as Guest
+                  </h3>
+                  <p className="text-sm text-[#1A2642]/70 mb-3">
+                    You're checking out without an account. Create an account after purchase to track orders and enjoy faster checkout next time.
+                  </p>
+                  <Link href="/account?redirect=/checkout">
+                    <Button variant="outline" size="sm" className="border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-white">
+                      Login / Sign Up Instead
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          )}
 
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Left Column - Forms */}
@@ -260,24 +342,48 @@ export default function CheckoutPage() {
                       onChange={handleInputChange}
                     />
                   </div>
-                  <div className="grid md:grid-cols-3 gap-4">
+                  <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="city">City *</Label>
+                      <Label htmlFor="state">State *</Label>
+                      <Select
+                        id="state"
+                        name="state"
+                        value={formData.state}
+                        onChange={handleStateChange}
+                        required
+                      >
+                        <option value="">Select State</option>
+                        {getStatesList().map(state => (
+                          <option key={state} value={state}>{state}</option>
+                        ))}
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="district">District *</Label>
+                      <Select
+                        id="district"
+                        name="district"
+                        value={formData.district}
+                        onChange={handleDistrictChange}
+                        disabled={!formData.state}
+                        required
+                      >
+                        <option value="">Select District</option>
+                        {availableDistricts.map(district => (
+                          <option key={district} value={district}>{district}</option>
+                        ))}
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="city">City/Town *</Label>
                       <Input
                         id="city"
                         name="city"
                         value={formData.city}
                         onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="state">State *</Label>
-                      <Input
-                        id="state"
-                        name="state"
-                        value={formData.state}
-                        onChange={handleInputChange}
+                        placeholder="Enter your city"
                         required
                       />
                     </div>
@@ -289,8 +395,12 @@ export default function CheckoutPage() {
                         value={formData.pincode}
                         onChange={handleInputChange}
                         maxLength={6}
+                        placeholder="Auto-filled based on district"
                         required
                       />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {formData.pincode ? `Pincode for ${formData.district || 'selected district'}` : 'Select district to auto-fill'}
+                      </p>
                     </div>
                   </div>
                   <div>
@@ -381,9 +491,13 @@ export default function CheckoutPage() {
                 {/* Cart Items */}
                 <div className="space-y-4 mb-6 max-h-64 overflow-y-auto">
                   {cart.map((item) => (
-                    <div key={item.id} className="flex gap-4">
-                      <div className="w-16 h-16 bg-[#FAF9F6] rounded-lg flex items-center justify-center text-2xl">
-                        {item.image}
+                    <div key={getProductId(item)} className="flex gap-4">
+                      <div className="relative w-16 h-16 bg-[#FAF9F6] rounded-lg overflow-hidden flex-shrink-0">
+                        <img 
+                          src={item.image} 
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                       <div className="flex-1">
                         <h4 className="font-semibold text-sm text-[#1A2642]">{item.name}</h4>
@@ -407,14 +521,11 @@ export default function CheckoutPage() {
                       {shipping === 0 ? "FREE" : `₹${shipping.toLocaleString('en-IN')}`}
                     </span>
                   </div>
-                  <div className="flex justify-between text-[#1A2642]/70">
-                    <span>GST (18%)</span>
-                    <span>₹{gst.toLocaleString('en-IN')}</span>
-                  </div>
                   <div className="border-t border-gray-200 pt-3 flex justify-between text-xl font-bold text-[#1A2642]">
                     <span>Total</span>
                     <span>₹{total.toLocaleString('en-IN')}</span>
                   </div>
+                  <p className="text-xs text-[#1A2642]/60 text-right">All taxes included</p>
                 </div>
 
                 {shipping > 0 && (

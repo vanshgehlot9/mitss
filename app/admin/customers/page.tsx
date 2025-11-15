@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { collection, getDocs, doc, updateDoc, query, orderBy, where } from 'firebase/firestore'
+import { doc, updateDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -92,76 +92,48 @@ export default function CustomersPage() {
 
   const loadCustomers = async () => {
     try {
-      // Load all orders first to calculate customer metrics
-      const ordersSnapshot = await getDocs(collection(db, 'orders'))
-      const orders = ordersSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate()
-      }))
+      setLoading(true)
+      
+      // Fetch customers from API (much faster)
+      const response = await fetch('/api/admin/customers-summary')
+      const data = await response.json()
 
-      // Group orders by user
-      const customerMap = new Map<string, any>()
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to load customers')
+      }
 
-      orders.forEach((order: any) => {
-        const userId = order.userId
-        if (!userId) return
-
-        if (!customerMap.has(userId)) {
-          customerMap.set(userId, {
-            id: userId,
-            name: order.userName || 'Unknown',
-            email: order.userEmail || '',
-            phone: order.userPhone,
-            address: order.shippingAddress,
-            orders: [],
-            totalSpent: 0,
-            totalOrders: 0,
-            createdAt: order.createdAt,
-            lastOrderDate: order.createdAt,
-            status: 'active' as const,
-            tags: [] as string[]
-          })
-        }
-
-        const customer = customerMap.get(userId)
-        customer.orders.push(order)
-        customer.totalSpent += order.total || 0
-        customer.totalOrders += 1
-        
-        if (order.createdAt > customer.lastOrderDate) {
-          customer.lastOrderDate = order.createdAt
-        }
-        if (order.createdAt < customer.createdAt) {
-          customer.createdAt = order.createdAt
-        }
-      })
-
-      // Convert to array and calculate metrics
-      const customersData: Customer[] = Array.from(customerMap.values()).map(customer => {
-        const averageOrderValue = customer.totalOrders > 0 
-          ? customer.totalSpent / customer.totalOrders 
-          : 0
-
+      // Convert to Customer format with auto-tagging
+      const customersData: Customer[] = data.customers.map((c: any) => {
         const tags: string[] = []
         
         // Auto-tag customers
-        if (customer.totalSpent > 50000) tags.push('VIP')
-        if (customer.totalSpent > 25000) tags.push('High Value')
-        if (customer.totalOrders >= 5) tags.push('Loyal')
+        if (c.totalSpent > 50000) tags.push('VIP')
+        if (c.totalSpent > 25000) tags.push('High Value')
+        if (c.totalOrders >= 5) tags.push('Loyal')
         
-        const daysSinceCreation = (new Date().getTime() - customer.createdAt.getTime()) / (1000 * 60 * 60 * 24)
-        if (daysSinceCreation < 30) tags.push('New')
-        
-        const daysSinceLastOrder = customer.lastOrderDate 
-          ? (new Date().getTime() - customer.lastOrderDate.getTime()) / (1000 * 60 * 60 * 24)
+        const daysSinceLastOrder = c.lastOrderDate 
+          ? (new Date().getTime() - new Date(c.lastOrderDate).getTime()) / (1000 * 60 * 60 * 24)
           : 999
         
         if (daysSinceLastOrder > 90) tags.push('At Risk')
 
         return {
-          ...customer,
-          averageOrderValue,
+          id: c.id,
+          name: c.name,
+          email: c.email,
+          phone: '',
+          address: {
+            street: '',
+            city: '',
+            state: '',
+            pincode: ''
+          },
+          createdAt: new Date(c.lastOrderDate),
+          lastOrderDate: new Date(c.lastOrderDate),
+          totalOrders: c.totalOrders,
+          totalSpent: c.totalSpent,
+          averageOrderValue: c.averageOrderValue,
+          status: 'active' as const,
           tags
         }
       })
@@ -171,9 +143,9 @@ export default function CustomersPage() {
 
       setCustomers(customersData)
       setFilteredCustomers(customersData)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading customers:', error)
-      toast.error('Failed to load customers')
+      toast.error('Failed to load customers: ' + error.message)
     } finally {
       setLoading(false)
     }
@@ -305,10 +277,29 @@ export default function CustomersPage() {
 
   if (loading) {
     return (
-      <div className="p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="p-6 space-y-6">
+        <div className="space-y-2">
+          <div className="h-8 w-64 bg-gray-200 animate-pulse rounded"></div>
+          <div className="h-4 w-48 bg-gray-200 animate-pulse rounded"></div>
         </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <div className="h-20 bg-gray-200 animate-pulse rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-16 bg-gray-200 animate-pulse rounded"></div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }

@@ -701,12 +701,11 @@ export default function AllProducts() {
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {recentlyViewedProducts.slice(0, 5).map((product) => (
-                <Link
-                  key={product.id}
-                  href={`/products/${product.id}`}
-                  className="group"
-                >
-                  <div className="bg-white dark:bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all">
+                <div key={getProductId(product)} className="group">
+                  <Link
+                    href={`/products/${getProductId(product)}`}
+                  >
+                    <div className="bg-white dark:bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all">
                   <div className="relative h-40 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
                       <div className="absolute inset-0 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
                         <img 
@@ -721,8 +720,9 @@ export default function AllProducts() {
                       <h4 className="text-sm font-bold line-clamp-1 mb-2">{product.name}</h4>
                       <p className="text-[#D4AF37] font-bold">₹{product.price.toLocaleString('en-IN')}</p>
                     </div>
-                  </div>
-                </Link>
+                    </div>
+                  </Link>
+                </div>
               ))}
             </div>
           </div>

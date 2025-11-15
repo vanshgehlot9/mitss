@@ -16,8 +16,6 @@ import Link from "next/link"
 
 const simpleLinks = [
   { name: "Home", href: "/" },
-  { name: "Custom Design", href: "/custom-design" },
-  { name: "Deals", href: "/deals" },
   { name: "Help Center", href: "/help-center" },
   { name: "Contact", href: "/contact" },
 ]

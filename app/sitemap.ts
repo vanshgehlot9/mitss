@@ -13,7 +13,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/deals',
     '/wishlist',
     '/compare',
-    '/gift-registry',
     '/track-order',
     '/account',
     '/sustainability',

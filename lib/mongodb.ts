@@ -38,3 +38,12 @@ function getClientPromise(): Promise<MongoClient> {
 // Don't call getClientPromise() here! Export the function itself
 // This way it's only called when the API route actually runs
 export default getClientPromise
+
+/**
+ * Get database instance
+ */
+export async function getDatabase() {
+  const client = await getClientPromise()
+  const dbName = process.env.DATABASE_NAME || 'default'
+  return client.db(dbName)
+}

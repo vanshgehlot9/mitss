@@ -143,7 +143,7 @@ export default function AdminSetupPage() {
                 <Input
                   id="userEmail"
                   type="email"
-                  placeholder="admin@mitss.com"
+                  placeholder="info@mitss.store"
                   value={userEmail}
                   onChange={(e) => setUserEmail(e.target.value)}
                   required
@@ -179,7 +179,7 @@ export default function AdminSetupPage() {
                 <pre className="text-xs overflow-x-auto">
 {`{
   "uid": "your-user-uid",
-  "email": "admin@mitss.com",
+  "email": "info@mitss.store",
   "role": "admin",
   "permissions": [
     "view:products",
@@ -201,7 +201,7 @@ export default function AdminSetupPage() {
                   size="sm"
                   onClick={() => copyToClipboard(`{
   "uid": "your-user-uid",
-  "email": "admin@mitss.com",
+  "email": "info@mitss.store",
   "role": "admin",
   "permissions": ["view:products", "create:order", "view:all_orders", "update:order_status", "view:analytics", "manage:products", "manage:inventory", "view:customers", "moderate:reviews"],
   "assignedBy": "system",

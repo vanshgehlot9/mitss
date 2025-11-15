@@ -4,8 +4,8 @@ export const initialProducts = [
     name: "Cross-Back Dining Chair",
     description: "Elegant cross-back dining chair with natural wooden seat and black metal frame. Perfect for modern and traditional interiors. Handcrafted with premium materials for lasting durability.",
     category: "Dining Room",
-    price: 4999,
-    originalPrice: 7999,
+    price: 2500,
+    originalPrice: 4999,
     rating: 4.7,
     reviews: 156,
     image: "/images/products/exclusiveproduct1.png",
@@ -13,6 +13,22 @@ export const initialProducts = [
     inStock: true,
     featured: true,
     isExclusive: false,  // Regular product with Buy Now
+    color: ["Natural Wood", "Black", "White"],
+    features: [
+      "Elegant cross-back design",
+      "Natural wooden seat",
+      "Black metal frame",
+      "Handcrafted with premium materials",
+      "Suitable for indoor use",
+      "Easy to maintain"
+    ],
+    dimensions: {
+      width: "45cm",
+      height: "90cm",
+      depth: "50cm"
+    },
+    material: "Wood & Metal",
+    deliveryTime: "2-3 weeks",
   },
   {
     name: "Industrial Bar Stool",
@@ -62,15 +78,90 @@ export const initialProducts = [
     name: "Industrial Metal Chair",
     description: "Classic industrial metal dining chair with vintage finish. Stackable design perfect for cafes, restaurants, or modern homes. Durable powder-coated steel construction.",
     category: "Dining Room",
-    price: 3499,
-    originalPrice: 4999,
+    price: 1700,
+    originalPrice: 3499,
     rating: 4.6,
     reviews: 142,
     image: "/images/products/exclusiveproduct5.png",
     badge: "Popular",
     inStock: true,
     featured: true,
-    isExclusive: true,  // Exclusive product - WhatsApp only
-    exclusivePrice: "Contact for Bulk Pricing",
+    isExclusive: false,  // Regular product with Buy Now
+    color: ["Black", "Grey", "Brown"],
+    features: [
+      "Classic industrial design",
+      "Vintage finish",
+      "Stackable design",
+      "Durable powder-coated steel",
+      "Perfect for cafes and restaurants",
+      "Easy to clean"
+    ],
+    dimensions: {
+      width: "40cm",
+      height: "85cm",
+      depth: "45cm"
+    },
+    material: "Metal",
+    deliveryTime: "2-3 weeks",
+  },
+  {
+    name: "Premium Furniture Collection Set",
+    description: "Luxurious complete furniture set featuring premium materials and exquisite craftsmanship. This exclusive collection includes multiple pieces designed to transform your space with elegance and sophistication. Perfect for those seeking high-end interior solutions.",
+    category: "Living Room",
+    price: 20000,
+    originalPrice: 35000,
+    rating: 4.9,
+    reviews: 78,
+    image: "/images/products/productimage1.png",
+    badge: "Premium",
+    inStock: true,
+    featured: true,
+    isExclusive: false,  // Regular product with Buy Now
+    color: ["Natural Wood", "Walnut", "Dark Oak"],
+    features: [
+      "Premium quality materials",
+      "Exquisite craftsmanship",
+      "Complete furniture set",
+      "Elegant design",
+      "Durable construction",
+      "Professional installation available"
+    ],
+    dimensions: {
+      width: "Various",
+      height: "Various",
+      depth: "Various"
+    },
+    material: "Premium Wood & Metal",
+    deliveryTime: "3-4 weeks",
+  },
+  {
+    name: "Modern Accent Chair",
+    description: "Stylish modern accent chair with comfortable cushioning and sleek design. Features sturdy construction with premium upholstery. Perfect addition to any living room, bedroom, or reading nook.",
+    category: "Seating",
+    price: 2000,
+    originalPrice: 3500,
+    rating: 4.5,
+    reviews: 92,
+    image: "/images/products/productimage2.png",
+    badge: "Best Value",
+    inStock: true,
+    featured: true,
+    isExclusive: false,  // Regular product with Buy Now
+    color: ["Grey", "Beige", "Navy Blue"],
+    features: [
+      "Comfortable cushioning",
+      "Sleek modern design",
+      "Premium upholstery",
+      "Sturdy construction",
+      "Easy to assemble",
+      "Perfect for any room"
+    ],
+    dimensions: {
+      width: "65cm",
+      height: "80cm",
+      depth: "70cm"
+    },
+    material: "Fabric & Wood",
+    deliveryTime: "1-2 weeks",
   },
 ];

@@ -30,7 +30,18 @@ if (shouldInitialize) {
   try {
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp()
     auth = getAuth(app)
-    db = getFirestore(app)
+    
+    // Initialize Firestore with database name if specified
+    const databaseId = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_ID || '(default)'
+    try {
+      db = getFirestore(app, databaseId)
+      console.log(`Firestore initialized with database: ${databaseId}`)
+    } catch (fsError) {
+      console.error('Firestore initialization error:', fsError)
+      // Try default database as fallback
+      db = getFirestore(app)
+    }
+    
     storage = getStorage(app)
     
     // Analytics (only in browser)

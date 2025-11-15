@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import Image from "next/image"
+import { useEffect, useState } from "react"
 
 const decorCategories = [
   {
@@ -55,6 +56,26 @@ const decorCategories = [
 ]
 
 export default function DecorShowcase() {
+  const [products, setProducts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const response = await fetch('/api/products?limit=9')
+        const data = await response.json()
+        if (data.success) {
+          setProducts(data.data.slice(0, 9))
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchProducts()
+  }, [])
+
   return (
     <section className="py-20 bg-gradient-to-b from-[#FAF9F6] to-white relative overflow-hidden">
       <div className="container mx-auto px-4">
@@ -81,10 +102,10 @@ export default function DecorShowcase() {
           </motion.div>
 
           {/* Right Grid - Top Row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {decorCategories.slice(0, 4).map((category, index) => (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            {products.slice(0, 4).map((product, index) => (
               <motion.div
-                key={category.title}
+                key={product._id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -92,14 +113,20 @@ export default function DecorShowcase() {
                 whileHover={{ y: -8 }}
                 className="group"
               >
-                <Link href={category.href}>
-                  <div className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100">
-                    <div className="relative aspect-square bg-gradient-to-br from-[#F5EFE7] to-[#E8DCC4] flex items-center justify-center group-hover:scale-105 transition-transform duration-500">
-                      <span className="text-6xl">{category.image}</span>
+                <Link href={`/products/${product._id}`}>
+                  <div className="bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100">
+                    <div className="relative aspect-square bg-gradient-to-br from-[#F5EFE7] to-[#E8DCC4] overflow-hidden">
+                      <Image
+                        src={product.image}
+                        alt={product.name}
+                        fill
+                        className="object-cover group-hover:scale-110 transition-transform duration-500"
+                        sizes="(max-width: 768px) 50vw, 25vw"
+                      />
                     </div>
-                    <div className="p-4 text-center">
-                      <h3 className="font-bold text-[#1A2642] group-hover:text-[#D4AF37] transition-colors">
-                        {category.title}
+                    <div className="p-3 md:p-4 text-center">
+                      <h3 className="font-bold text-xs md:text-sm text-[#1A2642] group-hover:text-[#D4AF37] transition-colors line-clamp-1">
+                        {product.name}
                       </h3>
                     </div>
                   </div>
@@ -110,10 +137,10 @@ export default function DecorShowcase() {
         </div>
 
         {/* Bottom Row */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          {decorCategories.slice(4).map((category, index) => (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
+          {products.slice(4, 9).map((product, index) => (
             <motion.div
-              key={category.title}
+              key={product._id}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -121,14 +148,20 @@ export default function DecorShowcase() {
               whileHover={{ y: -8 }}
               className="group"
             >
-              <Link href={category.href}>
-                <div className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100">
-                  <div className="relative aspect-square bg-gradient-to-br from-[#F5EFE7] to-[#E8DCC4] flex items-center justify-center group-hover:scale-105 transition-transform duration-500">
-                    <span className="text-6xl">{category.image}</span>
+              <Link href={`/products/${product._id}`}>
+                <div className="bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100">
+                  <div className="relative aspect-square bg-gradient-to-br from-[#F5EFE7] to-[#E8DCC4] overflow-hidden">
+                    <Image
+                      src={product.image}
+                      alt={product.name}
+                      fill
+                      className="object-cover group-hover:scale-110 transition-transform duration-500"
+                      sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                    />
                   </div>
-                  <div className="p-4 text-center">
-                    <h3 className="font-bold text-sm text-[#1A2642] group-hover:text-[#D4AF37] transition-colors">
-                      {category.title}
+                  <div className="p-3 md:p-4 text-center">
+                    <h3 className="font-bold text-xs md:text-sm text-[#1A2642] group-hover:text-[#D4AF37] transition-colors line-clamp-1">
+                      {product.name}
                     </h3>
                   </div>
                 </div>

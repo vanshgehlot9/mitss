@@ -29,9 +29,9 @@ const db = getFirestore(app)
 
 async function createAdminUser() {
   // Admin user details
-  const adminEmail = 'admin@mitss.com' // Change this to your desired admin email
-  const adminPassword = 'Admin@123456' // Change this to a strong password
-  const adminName = 'Admin User'
+  const adminEmail = 'info@mitss.store'
+  const adminPassword = 'Mitss@2025'
+  const adminName = 'MITSS Admin'
   
   try {
     console.log('Creating admin user...')

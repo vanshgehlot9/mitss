@@ -26,12 +26,29 @@ export default function ContactPage() {
     e.preventDefault()
     setIsSubmitting(true)
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    toast.success("Message sent successfully! We'll get back to you soon.")
-    setFormData({ name: "", email: "", phone: "", subject: "general", message: "" })
-    setIsSubmitting(false)
+    try {
+      const response = await fetch('/api/save-contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        toast.success(data.message || "Message sent successfully! We'll get back to you soon.")
+        setFormData({ name: "", email: "", phone: "", subject: "general", message: "" })
+      } else {
+        toast.error(data.error || "Failed to send message. Please try again.")
+      }
+    } catch (error) {
+      console.error('Error submitting contact form:', error)
+      toast.error("An error occurred. Please try again later.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { useInView } from "react-intersection-observer"
-import { Star, Heart, MessageCircle, Eye, ArrowRight, ShoppingCart } from "lucide-react"
+import { Star, Heart, MessageCircle, Eye, ArrowRight, ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
@@ -10,14 +10,79 @@ import { useCart } from "@/lib/cart-context"
 import { useProducts } from "@/hooks/use-products"
 import { toast } from "sonner"
 import Image from "next/image"
+import { useEffect, useRef, useState } from "react"
 
 export default function FeaturedProducts() {
   const { addToCart } = useCart()
-  const { products, loading } = useProducts({ limit: 5 })
+  const { products, loading } = useProducts({ limit: 10 })
   const [ref, inView] = useInView({
     triggerOnce: true,
     threshold: 0.1,
   })
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(true)
+  const autoScrollRef = useRef<NodeJS.Timeout | null>(null)
+
+  const checkScrollButtons = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current
+      setCanScrollLeft(scrollLeft > 0)
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10)
+    }
+  }
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = scrollContainerRef.current.clientWidth * 0.8
+      const newScrollLeft = direction === 'left'
+        ? scrollContainerRef.current.scrollLeft - scrollAmount
+        : scrollContainerRef.current.scrollLeft + scrollAmount
+      
+      scrollContainerRef.current.scrollTo({
+        left: newScrollLeft,
+        behavior: 'smooth'
+      })
+    }
+  }
+
+  const autoScroll = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current
+      
+      if (scrollLeft >= scrollWidth - clientWidth - 10) {
+        // Reset to start
+        scrollContainerRef.current.scrollTo({
+          left: 0,
+          behavior: 'smooth'
+        })
+      } else {
+        // Scroll to next
+        scroll('right')
+      }
+    }
+  }
+
+  useEffect(() => {
+    checkScrollButtons()
+    
+    // Start auto-scroll
+    autoScrollRef.current = setInterval(autoScroll, 3000)
+
+    return () => {
+      if (autoScrollRef.current) {
+        clearInterval(autoScrollRef.current)
+      }
+    }
+  }, [products])
+
+  useEffect(() => {
+    const container = scrollContainerRef.current
+    if (container) {
+      container.addEventListener('scroll', checkScrollButtons)
+      return () => container.removeEventListener('scroll', checkScrollButtons)
+    }
+  }, [])
 
   const handleWhatsAppClick = (product: typeof products[0]) => {
     const isExclusive = (product as any).isExclusive
@@ -84,15 +149,45 @@ export default function FeaturedProducts() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {products.map((product, index) => (
-            <motion.div
-              key={`featured-${product.id || product._id || index}`}
-              initial={{ opacity: 0, y: 50 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.7, delay: index * 0.2 }}
-              className="group relative bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100"
+        <div className="relative">
+          {/* Scroll Buttons */}
+          {canScrollLeft && (
+            <button
+              onClick={() => scroll('left')}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-30 bg-white/90 hover:bg-white shadow-lg rounded-full p-2 md:p-3 transition-all duration-300 hover:scale-110"
+              aria-label="Scroll left"
             >
+              <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 text-[#1A2642]" />
+            </button>
+          )}
+          {canScrollRight && (
+            <button
+              onClick={() => scroll('right')}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-30 bg-white/90 hover:bg-white shadow-lg rounded-full p-2 md:p-3 transition-all duration-300 hover:scale-110"
+              aria-label="Scroll right"
+            >
+              <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-[#1A2642]" />
+            </button>
+          )}
+
+          <div 
+            ref={scrollContainerRef}
+            className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
+            onMouseEnter={() => {
+              if (autoScrollRef.current) clearInterval(autoScrollRef.current)
+            }}
+            onMouseLeave={() => {
+              autoScrollRef.current = setInterval(autoScroll, 3000)
+            }}
+          >
+            {products.map((product, index) => (
+              <motion.div
+                key={`featured-${product.id || product._id || index}`}
+                initial={{ opacity: 0, y: 50 }}
+                animate={inView ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 0.7, delay: index * 0.1 }}
+                className="group relative bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 flex-shrink-0 w-[160px] sm:w-[200px] md:w-[240px]"
+              >
               {(product as any).isExclusive && (
                 <div className="absolute top-2 left-2 z-20">
                   <Badge className="bg-[#D4AF37] text-white border-0 shadow-md text-xs px-2 py-0.5">
@@ -181,6 +276,7 @@ export default function FeaturedProducts() {
               </div>
             </motion.div>
           ))}
+          </div>
         </div>
 
         <motion.div
@@ -201,6 +297,16 @@ export default function FeaturedProducts() {
           </Link>
         </motion.div>
       </div>
+
+      <style jsx global>{`
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </section>
   )
 }

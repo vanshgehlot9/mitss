@@ -4,6 +4,8 @@ import { motion } from "framer-motion"
 import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import Image from "next/image"
+import { useEffect, useState } from "react"
 
 const decorItems = [
   {
@@ -57,6 +59,46 @@ const decorItems = [
 ]
 
 export default function HomeDecorSection() {
+  const [products, setProducts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const response = await fetch('/api/products?limit=8')
+        const data = await response.json()
+        if (data.success) {
+          setProducts(data.data.slice(0, 8))
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchProducts()
+  }, [])
+
+  if (loading) {
+    return (
+      <section className="py-20 bg-gradient-to-b from-white to-[#FAF9F6]">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 animate-pulse">
+                <div className="aspect-square bg-gray-200" />
+                <div className="p-5">
+                  <div className="h-4 bg-gray-200 rounded mb-2" />
+                  <div className="h-3 bg-gray-200 rounded w-2/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section className="py-20 bg-gradient-to-b from-white to-[#FAF9F6]">
       <div className="container mx-auto px-4">
@@ -89,10 +131,10 @@ export default function HomeDecorSection() {
           </motion.div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {decorItems.map((item, index) => (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          {products.map((product, index) => (
             <motion.div
-              key={item.title}
+              key={product._id}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -100,19 +142,33 @@ export default function HomeDecorSection() {
               whileHover={{ y: -8 }}
               className="group"
             >
-              <Link href="/products">
-                <div className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100">
-                  <div className={`relative aspect-square bg-gradient-to-br ${item.bgColor} flex items-center justify-center overflow-hidden`}>
-                    <div className="absolute inset-0 flex items-center justify-center group-hover:scale-110 transition-transform duration-700">
-                      <span className="text-7xl opacity-80">{item.image}</span>
-                    </div>
+              <Link href={`/products/${product._id}`}>
+                <div className="bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100">
+                  <div className="relative aspect-square bg-gradient-to-br from-[#F5EFE7] to-[#E8DCC4] overflow-hidden">
+                    <Image
+                      src={product.image}
+                      alt={product.name}
+                      fill
+                      className="object-cover group-hover:scale-110 transition-transform duration-700"
+                      sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    />
+                    {product.badge && (
+                      <div className="absolute top-2 md:top-3 right-2 md:right-3 bg-[#D4AF37] text-white px-2 md:px-3 py-1 rounded-lg text-xs md:text-sm font-bold shadow-lg">
+                        {product.badge}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="p-5 text-center">
-                    <h3 className="font-bold text-lg text-[#1A2642] mb-2 group-hover:text-[#D4AF37] transition-colors">
-                      {item.title}
+                  <div className="p-3 md:p-5 text-center">
+                    <h3 className="font-bold text-sm md:text-base lg:text-lg text-[#1A2642] mb-1 md:mb-2 group-hover:text-[#D4AF37] transition-colors line-clamp-2 min-h-[2.5rem] md:min-h-[3rem]">
+                      {product.name}
                     </h3>
-                    <p className="text-sm text-[#1A2642]/60 font-semibold">{item.price}</p>
+                    <div className="flex items-center justify-center gap-2">
+                      <p className="text-base md:text-lg font-bold text-[#1A2642]">₹{product.price.toLocaleString()}</p>
+                      {product.originalPrice && (
+                        <p className="text-xs md:text-sm text-gray-400 line-through">₹{product.originalPrice.toLocaleString()}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </Link>

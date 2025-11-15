@@ -49,6 +49,21 @@ export default function ProductDetail({ product }: ProductDetailProps) {
     toast.success(`${quantity} x ${product.name} added to cart!`)
   }
 
+  const handleBuyNow = () => {
+    // Add to cart first
+    for (let i = 0; i < quantity; i++) {
+      addToCart({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        category: product.category
+      })
+    }
+    // Redirect to checkout
+    window.location.href = '/checkout'
+  }
+
   const handleWhatsAppClick = () => {
     const message = `Hi, I'm interested in the ${product.name}. Can you provide more details about pricing and customization?`
     window.open(`https://wa.me/919950036077?text=${encodeURIComponent(message)}`, '_blank')
@@ -244,41 +259,56 @@ export default function ProductDetail({ product }: ProductDetailProps) {
             )}
 
             {/* Actions */}
-            <div className="flex gap-4">
-              {(product as any).isExclusive ? (
+            {(product as any).isExclusive ? (
+              // Exclusive products: Only WhatsApp button
+              <div className="flex gap-4">
                 <Button 
-                  className="flex-1 bg-[#25D366] hover:bg-[#20BA5A] text-white h-14 text-lg"
+                  className="w-full bg-[#25D366] hover:bg-[#20BA5A] text-white h-14 text-lg"
                   onClick={handleWhatsAppClick}
                 >
                   <MessageCircle className="w-5 h-5 mr-2" />
                   Contact on WhatsApp
                 </Button>
-              ) : (
-                <Button 
-                  className="flex-1 bg-[#D4AF37] hover:bg-[#B8941F] text-white h-14 text-lg"
-                  onClick={handleAddToCart}
-                >
-                  <ShoppingCart className="w-5 h-5 mr-2" />
-                  Add to Cart
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-14 w-14"
-                onClick={toggleWishlist}
-              >
-                <Heart className={`w-6 h-6 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-14 w-14"
-                onClick={handleShare}
-              >
-                <Share2 className="w-5 h-5" />
-              </Button>
-            </div>
+              </div>
+            ) : (
+              // Regular products: Buy Now, Add to Cart, Wishlist, and Share
+              <>
+                <div className="flex gap-4">
+                  <Button 
+                    className="flex-1 bg-[#D4AF37] hover:bg-[#B8941F] text-white h-14 text-lg font-semibold"
+                    onClick={handleBuyNow}
+                  >
+                    <ShoppingCart className="w-5 h-5 mr-2" />
+                    Buy Now
+                  </Button>
+                  <Button 
+                    className="flex-1 bg-[#1A2642] hover:bg-[#2A3652] text-white h-14 text-lg"
+                    onClick={handleAddToCart}
+                  >
+                    <ShoppingCart className="w-5 h-5 mr-2" />
+                    Add to Cart
+                  </Button>
+                </div>
+                <div className="flex gap-4">
+                  <Button
+                    variant="outline"
+                    className="flex-1 h-12"
+                    onClick={toggleWishlist}
+                  >
+                    <Heart className={`w-5 h-5 mr-2 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />
+                    {isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-12 w-12"
+                    onClick={handleShare}
+                  >
+                    <Share2 className="w-5 h-5" />
+                  </Button>
+                </div>
+              </>
+            )}
 
             {/* Stock Status */}
             <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">

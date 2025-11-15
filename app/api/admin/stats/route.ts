@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import clientPromise from "@/lib/mongodb"
+import { db } from "@/lib/firebase"
+import { collection, query, where, getDocs, Timestamp } from "firebase/firestore"
 
 // Force dynamic rendering - don't try to statically analyze this route
 export const dynamic = 'force-dynamic'
@@ -17,28 +18,33 @@ export async function GET(request: NextRequest) {
     const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
     const previousStartDate = new Date(startDate.getTime() - days * 24 * 60 * 60 * 1000)
 
-    const client = await clientPromise()
-    const db = client.db(process.env.DATABASE_NAME || 'default')
+    // Fetch all orders from Firestore
+    const ordersSnapshot = await getDocs(collection(db, "orders"))
+    const allOrders = ordersSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAt: doc.data().createdAt?.toDate()
+    }))
 
-    // Fetch orders for current period
-    const currentOrders = await db.collection("orders")
-      .find({ createdAt: { $gte: startDate } })
-      .toArray()
+    // Filter orders for current period
+    const currentOrders = allOrders.filter(order => 
+      order.createdAt && order.createdAt >= startDate
+    )
 
-    // Fetch orders for previous period
-    const previousOrdersDocs = await db.collection("orders")
-      .find({ 
-        createdAt: { $gte: previousStartDate, $lt: startDate } 
-      })
-      .toArray()
+    // Filter orders for previous period
+    const previousOrdersDocs = allOrders.filter(order =>
+      order.createdAt && 
+      order.createdAt >= previousStartDate && 
+      order.createdAt < startDate
+    )
 
     // Calculate current period stats
     let totalRevenue = 0
     let totalOrders = currentOrders.length
     const revenueByDate: Record<string, { revenue: number; orders: number }> = {}
 
-    currentOrders.forEach((order) => {
-      const revenue = order.pricing?.total || 0
+    currentOrders.forEach((order: any) => {
+      const revenue = order.total || order.pricing?.total || 0
       totalRevenue += revenue
 
       // Group by date for chart
@@ -57,8 +63,8 @@ export async function GET(request: NextRequest) {
     let previousRevenue = 0
     let previousOrders = previousOrdersDocs.length
 
-    previousOrdersDocs.forEach((order) => {
-      previousRevenue += order.pricing?.total || 0
+    previousOrdersDocs.forEach((order: any) => {
+      previousRevenue += order.total || order.pricing?.total || 0
     })
 
     // Calculate changes
@@ -71,34 +77,47 @@ export async function GET(request: NextRequest) {
         ? ((totalOrders - previousOrders) / previousOrders) * 100
         : 0
 
-    // Fetch customers
-    const currentCustomers = await db.collection("users")
-      .countDocuments({ createdAt: { $gte: startDate } })
+    // Fetch customers from Firestore
+    const usersSnapshot = await getDocs(collection(db, "users"))
+    const allUsers = usersSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAt: doc.data().createdAt?.toDate()
+    }))
 
-    const previousCustomers = await db.collection("users")
-      .countDocuments({ 
-        createdAt: { $gte: previousStartDate, $lt: startDate } 
-      })
+    const currentCustomers = allUsers.filter(user => 
+      user.createdAt && user.createdAt >= startDate
+    ).length
+
+    const previousCustomers = allUsers.filter(user =>
+      user.createdAt && 
+      user.createdAt >= previousStartDate && 
+      user.createdAt < startDate
+    ).length
 
     const customersChange =
       previousCustomers > 0
         ? ((currentCustomers - previousCustomers) / previousCustomers) * 100
         : 0
 
-    // Fetch products
-    const products = await db.collection("products").find({}).toArray()
+    // Fetch products from Firestore
+    const productsSnapshot = await getDocs(collection(db, "products"))
+    const products = productsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }))
     const totalProducts = products.length
 
     let lowStockProducts = 0
     const productSales: Record<string, { name: string; category: string; image: string; revenue: number; units: number; stock: number }> = {}
 
-    products.forEach((product) => {
+    products.forEach((product: any) => {
       if ((product.stock || 0) < 10) {
         lowStockProducts++
       }
 
       // Initialize product sales tracking
-      productSales[product._id.toString()] = {
+      productSales[product.id] = {
         name: product.name || "",
         category: product.category || "",
         image: product.images?.[0] || "/placeholder.jpg",
@@ -125,19 +144,21 @@ export async function GET(request: NextRequest) {
       .slice(0, 5)
 
     // Get recent orders
-    const recentOrdersDocs = await db.collection("orders")
-      .find({})
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .toArray()
+    const recentOrdersDocs = allOrders
+      .sort((a: any, b: any) => {
+        const dateA = a.createdAt || new Date(0)
+        const dateB = b.createdAt || new Date(0)
+        return dateB.getTime() - dateA.getTime()
+      })
+      .slice(0, 5)
 
-    const recentOrders = recentOrdersDocs.map((order) => ({
-      id: order._id.toString(),
+    const recentOrders = recentOrdersDocs.map((order: any) => ({
+      id: order.id,
       orderNumber: order.orderNumber || "",
       customer: order.userName || "Unknown",
-      total: order.pricing?.total || 0,
+      total: order.total || order.pricing?.total || 0,
       status: order.status || "pending",
-      date: new Date(order.createdAt).toLocaleDateString(),
+      date: order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "N/A",
     }))
 
     // Format revenue data for chart
@@ -153,8 +174,9 @@ export async function GET(request: NextRequest) {
     const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
 
     // Calculate pending orders
-    const pendingOrders = await db.collection("orders")
-      .countDocuments({ status: "pending" })
+    const pendingOrders = allOrders.filter((order: any) => 
+      order.status === "pending"
+    ).length
 
     return NextResponse.json({
       success: true,
