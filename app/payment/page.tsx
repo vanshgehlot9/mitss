@@ -123,6 +123,14 @@ export default function PaymentPage() {
       if (!razorpayResponse.ok) {
         console.error('Razorpay order creation failed. Status:', razorpayResponse.status)
         console.error('Error details:', razorpayData)
+        
+        // Specific error for configuration issues
+        if (razorpayResponse.status === 500 && razorpayData.message?.includes('configuration')) {
+          toast.error('Payment gateway not configured. Please contact support at info@mitss.store')
+          setProcessing(false)
+          return
+        }
+        
         throw new Error(razorpayData.message || razorpayData.error || 'Failed to create payment order')
       }
 
@@ -284,8 +292,17 @@ export default function PaymentPage() {
       
     } catch (error: any) {
       console.error('Payment error:', error)
-      toast.error(error.message || "Payment failed. Please try again.")
-    } finally {
+      const errorMessage = error.message || "Payment failed. Please try again."
+      
+      // User-friendly error messages
+      if (errorMessage.includes('configuration')) {
+        toast.error('Payment system not available. Please contact support at info@mitss.store')
+      } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        toast.error('Network error. Please check your connection.')
+      } else {
+        toast.error(errorMessage)
+      }
+      
       setProcessing(false)
     }
   }
