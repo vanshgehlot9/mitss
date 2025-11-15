@@ -32,8 +32,14 @@ export async function GET(
     // FALLBACK: Try to find product in initial products
     const { id } = await params
     
-    // Try to parse as numeric ID first
-    const numericId = parseInt(id)
+    // Handle both numeric IDs and fallback-X format
+    let numericId: number
+    if (id.startsWith('fallback-')) {
+      numericId = parseInt(id.replace('fallback-', ''))
+    } else {
+      numericId = parseInt(id)
+    }
+    
     if (!isNaN(numericId) && numericId > 0 && numericId <= initialProducts.length) {
       const product = {
         ...initialProducts[numericId - 1],
