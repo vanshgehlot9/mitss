@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import clientPromise from '@/lib/mongodb'
+import { initialProducts } from '@/lib/initial-products'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -9,6 +10,19 @@ export async function GET(request: NextRequest) {
     const client = await clientPromise()
     const db = client.db(process.env.DATABASE_NAME || 'default')
     const products = db.collection(process.env.PRODUCTS_COLLECTION || 'products')
+
+    // Auto-seed if no products exist
+    const totalProducts = await products.countDocuments()
+    if (totalProducts === 0) {
+      console.log('No products found, auto-seeding...')
+      const productsWithTimestamps = initialProducts.map(product => ({
+        ...product,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }))
+      await products.insertMany(productsWithTimestamps)
+      console.log(`Auto-seeded ${productsWithTimestamps.length} products`)
+    }
 
     // Get query parameters
     const { searchParams } = new URL(request.url)
