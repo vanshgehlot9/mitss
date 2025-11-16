@@ -33,4 +33,8 @@ if (shouldInitialize) {
   }
 }
 
+if (!database) {
+  throw new Error('Firebase database is not initialized. Check your configuration.')
+}
+
 export { app, auth, database, storage, ref, push, set, get, update, query, orderByChild, limitToLast }
