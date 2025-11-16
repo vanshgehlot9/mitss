@@ -24,14 +24,21 @@ import {
 export async function POST(request: NextRequest) {
   try {
     console.log('=== Razorpay Create Order API Called ===');
+    console.log('Environment Check:', {
+      RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID ? 'Set (length: ' + process.env.RAZORPAY_KEY_ID.length + ')' : 'NOT SET',
+      RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET ? 'Set (length: ' + process.env.RAZORPAY_KEY_SECRET.length + ')' : 'NOT SET',
+      NODE_ENV: process.env.NODE_ENV,
+    });
     
     // Validate Razorpay configuration
     if (!validateRazorpayConfig()) {
       console.error('Razorpay configuration validation failed');
+      console.error('Please ensure RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are set in Vercel environment variables');
       return NextResponse.json(
         {
           success: false,
-          message: 'Payment gateway configuration error. Please contact support.',
+          message: 'Payment gateway not configured. Environment variables missing on server.',
+          error: 'RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET not found in environment',
         },
         { status: 500 }
       );

@@ -398,15 +398,15 @@ export default function PaymentPage() {
 
                   {/* Accepted Payment Methods */}
                   <div>
-                    <p className="text-sm text-[#1A2642]/60 mb-3">We accept all major payment methods:</p>
-                    <div className="flex flex-wrap items-center gap-4">
-                      <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg" alt="Visa" className="h-8" />
-                      <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className="h-8" />
-                      <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/American_Express_logo_%282018%29.svg" alt="Amex" className="h-8" />
-                      <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" alt="UPI" className="h-8" />
-                      <span className="text-xs text-[#1A2642]/60 font-semibold px-3 py-1 bg-gray-100 rounded">Paytm</span>
-                      <span className="text-xs text-[#1A2642]/60 font-semibold px-3 py-1 bg-gray-100 rounded">PhonePe</span>
-                      <span className="text-xs text-[#1A2642]/60 font-semibold px-3 py-1 bg-gray-100 rounded">Google Pay</span>
+                    <p className="text-xs sm:text-sm text-[#1A2642]/60 mb-3">We accept all major payment methods:</p>
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4">
+                      <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg" alt="Visa" className="h-5 sm:h-6 md:h-8 w-auto" />
+                      <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className="h-5 sm:h-6 md:h-8 w-auto" />
+                      <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/American_Express_logo_%282018%29.svg" alt="Amex" className="h-5 sm:h-6 md:h-8 w-auto" />
+                      <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" alt="UPI" className="h-5 sm:h-6 md:h-8 w-auto" />
+                      <span className="text-[10px] sm:text-xs text-[#1A2642]/60 font-semibold px-2 sm:px-3 py-1 bg-gray-100 rounded">Paytm</span>
+                      <span className="text-[10px] sm:text-xs text-[#1A2642]/60 font-semibold px-2 sm:px-3 py-1 bg-gray-100 rounded">PhonePe</span>
+                      <span className="text-[10px] sm:text-xs text-[#1A2642]/60 font-semibold px-2 sm:px-3 py-1 bg-gray-100 rounded">GPay</span>
                     </div>
                   </div>
                 </div>

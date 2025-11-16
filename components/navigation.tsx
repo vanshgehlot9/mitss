@@ -13,6 +13,7 @@ import MegaMenu from "@/components/mega-menu"
 import { megaMenuData } from "@/lib/navigation-data"
 import Image from "next/image"
 import Link from "next/link"
+import dynamic from "next/dynamic"
 
 const simpleLinks = [
   { name: "Home", href: "/" },
@@ -27,6 +28,11 @@ export default function Navigation() {
   const [activeMenu, setActiveMenu] = useState<string | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -142,7 +148,7 @@ export default function Navigation() {
                 <Heart className="w-5 h-5" />
               </Button>
             </Link>
-            <CartDrawer />
+            {mounted && <CartDrawer />}
 
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild className="lg:hidden">

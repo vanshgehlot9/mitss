@@ -2,7 +2,7 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app"
 import { getAnalytics, Analytics } from "firebase/analytics"
 import { getAuth, Auth } from "firebase/auth"
-import { getFirestore, Firestore } from "firebase/firestore"
+// Firestore import removed - not configured, using Realtime Database instead
 import { getStorage, FirebaseStorage } from "firebase/storage"
 
 // Your web app's Firebase configuration
@@ -21,7 +21,7 @@ const shouldInitialize = firebaseConfig.apiKey && firebaseConfig.apiKey !== '' &
 
 let app: FirebaseApp | undefined
 let auth: Auth | undefined
-let db: Firestore | undefined
+let db: any = undefined // Firestore disabled - using Realtime Database
 let storage: FirebaseStorage | undefined
 let analytics: Analytics | null = null
 
@@ -31,16 +31,9 @@ if (shouldInitialize) {
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp()
     auth = getAuth(app)
     
-    // Initialize Firestore with database name if specified
-    const databaseId = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_ID || '(default)'
-    try {
-      db = getFirestore(app, databaseId)
-      console.log(`Firestore initialized with database: ${databaseId}`)
-    } catch (fsError) {
-      console.error('Firestore initialization error:', fsError)
-      // Try default database as fallback
-      db = getFirestore(app)
-    }
+    // Firestore intentionally not initialized - database not configured
+    // All data operations use Firebase Realtime Database instead
+    // db remains undefined to prevent any Firestore connections
     
     storage = getStorage(app)
     

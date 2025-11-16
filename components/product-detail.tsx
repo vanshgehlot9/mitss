@@ -383,30 +383,6 @@ export default function ProductDetail({ product }: ProductDetailProps) {
             </TabsContent>
 
             <TabsContent value="reviews" className="space-y-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold">Customer Reviews</h3>
-                <Button variant="outline">Write a Review</Button>
-              </div>
-              
-              <div className="flex items-center gap-8 mb-8 p-6 bg-muted/30 rounded-lg">
-                <div className="text-center">
-                  <div className="text-5xl font-bold text-[#D4AF37] mb-2">{product.rating}</div>
-                  <div className="flex mb-2">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`w-4 h-4 ${
-                          i < Math.floor(product.rating)
-                            ? 'fill-[#D4AF37] text-[#D4AF37]'
-                            : 'text-gray-300'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <p className="text-sm text-muted-foreground">{product.reviews} reviews</p>
-                </div>
-              </div>
-
               <ProductReviews productId={product.id} />
             </TabsContent>
           </Tabs>

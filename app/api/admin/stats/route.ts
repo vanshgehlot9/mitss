@@ -1,13 +1,32 @@
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/lib/firebase"
-import { collection, query, where, getDocs, Timestamp } from "firebase/firestore"
+// Firestore disabled - using Realtime Database
+// import { db } from "@/lib/firebase"
+// import { collection, query, where, getDocs, Timestamp } from "firebase/firestore"
 
 // Force dynamic rendering - don't try to statically analyze this route
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 export async function GET(request: NextRequest) {
+  // Firestore not configured - return mock data or error
+  return NextResponse.json(
+    { 
+      error: "Firestore not configured. Admin stats temporarily unavailable.",
+      message: "Using Firebase Realtime Database for all operations. Admin dashboard stats will be available soon."
+    },
+    { status: 503 }
+  )
+  
+  /* FIRESTORE CODE DISABLED
   try {
+    // Check if Firestore is available
+    if (!db) {
+      return NextResponse.json(
+        { error: "Database not configured. Please configure Firestore in environment variables." },
+        { status: 503 }
+      )
+    }
+
     const searchParams = request.nextUrl.searchParams
     const range = searchParams.get("range") || "7d"
 
@@ -205,4 +224,5 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
+  */
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Star, ThumbsUp, ThumbsDown, Check, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -9,76 +9,102 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 import Image from "next/image"
+import { toast } from "sonner"
+import { useAuth } from "@/lib/auth-context"
 
 interface Review {
-  id: number
-  author: string
+  id: string
+  productId: number
+  userId: string
+  userName: string
+  userEmail: string
   rating: number
-  date: string
   title: string
-  content: string
-  verified: boolean
+  comment: string
+  images?: string[]
+  verifiedPurchase: boolean
   helpful: number
   notHelpful: number
-  images?: string[]
+  status: string
+  createdAt: any
 }
 
-// Real customer reviews
-const mockReviews: Review[] = [
+// Fallback reviews for when API fails or no reviews exist
+const fallbackReviews: Review[] = [
   {
-    id: 1,
-    author: "Anita Mehra",
+    id: "1",
+    productId: 0,
+    userId: "fallback",
+    userName: "Anita Mehra",
+    userEmail: "anita@example.com",
     rating: 5,
-    date: "2024-11-10",
     title: "Beautiful craftsmanship and quality!",
-    content: "Ordered the dining chair and I'm absolutely delighted. The finishing is excellent and the design is exactly what I was looking for. The metal frame is very sturdy and the wood seat is comfortable. Worth every penny!",
-    verified: true,
+    comment: "Ordered the dining chair and I'm absolutely delighted. The finishing is excellent and the design is exactly what I was looking for. The metal frame is very sturdy and the wood seat is comfortable. Worth every penny!",
+    verifiedPurchase: true,
     helpful: 15,
-    notHelpful: 0
+    notHelpful: 0,
+    status: "approved",
+    createdAt: new Date("2024-11-10")
   },
   {
-    id: 2,
-    author: "Rohan Verma",
+    id: "2",
+    productId: 0,
+    userId: "fallback",
+    userName: "Rohan Verma",
+    userEmail: "rohan@example.com",
     rating: 5,
-    date: "2024-11-05",
     title: "Exceeded my expectations",
-    content: "I purchased furniture from MITSS for my new home and the quality is outstanding. The delivery was prompt and the team was very professional. The furniture looks even better than the photos. Highly recommended!",
-    verified: true,
+    comment: "I purchased furniture from MITSS for my new home and the quality is outstanding. The delivery was prompt and the team was very professional. The furniture looks even better than the photos. Highly recommended!",
+    verifiedPurchase: true,
     helpful: 22,
-    notHelpful: 1
+    notHelpful: 1,
+    status: "approved",
+    createdAt: new Date("2024-11-05")
   },
   {
-    id: 3,
-    author: "Kavita Singh",
+    id: "3",
+    productId: 0,
+    userId: "fallback",
+    userName: "Kavita Singh",
+    userEmail: "kavita@example.com",
     rating: 4,
-    date: "2024-10-28",
     title: "Great product, fast delivery",
-    content: "Very happy with my purchase. The furniture is well-made and the design is modern yet timeless. Assembly instructions were clear. Only giving 4 stars because I wish there were more color options available.",
-    verified: true,
+    comment: "Very happy with my purchase. The furniture is well-made and the design is modern yet timeless. Assembly instructions were clear. Only giving 4 stars because I wish there were more color options available.",
+    verifiedPurchase: true,
     helpful: 8,
-    notHelpful: 0
+    notHelpful: 0,
+    status: "approved",
+    createdAt: new Date("2024-10-28")
   },
   {
-    id: 4,
-    author: "Deepak Malhotra",
+    id: "4",
+    productId: 0,
+    userId: "fallback",
+    userName: "Deepak Malhotra",
+    userEmail: "deepak@example.com",
     rating: 5,
-    date: "2024-10-20",
     title: "Excellent customer service",
-    content: "Not only is the furniture top quality, but the customer service was exceptional. They helped me choose the right pieces for my space and answered all my questions promptly. The furniture arrived well-packaged and in perfect condition.",
-    verified: true,
+    comment: "Not only is the furniture top quality, but the customer service was exceptional. They helped me choose the right pieces for my space and answered all my questions promptly. The furniture arrived well-packaged and in perfect condition.",
+    verifiedPurchase: true,
     helpful: 18,
-    notHelpful: 2
+    notHelpful: 2,
+    status: "approved",
+    createdAt: new Date("2024-10-20")
   },
   {
-    id: 5,
-    author: "Priya Kapoor",
+    id: "5",
+    productId: 0,
+    userId: "fallback",
+    userName: "Priya Kapoor",
+    userEmail: "priya@example.com",
     rating: 5,
-    date: "2024-10-12",
     title: "Perfect for modern homes",
-    content: "I love the industrial modern aesthetic of MITSS furniture. The bar stool I purchased is not only stylish but also very comfortable and sturdy. The adjustable height feature is really convenient. Will definitely shop here again!",
-    verified: true,
+    comment: "I love the industrial modern aesthetic of MITSS furniture. The bar stool I purchased is not only stylish but also very comfortable and sturdy. The adjustable height feature is really convenient. Will definitely shop here again!",
+    verifiedPurchase: true,
     helpful: 25,
-    notHelpful: 0
+    notHelpful: 0,
+    status: "approved",
+    createdAt: new Date("2024-10-12")
   }
 ]
 
@@ -87,15 +113,45 @@ interface ProductReviewsProps {
 }
 
 export default function ProductReviews({ productId }: ProductReviewsProps) {
-  const [reviews] = useState<Review[]>(mockReviews)
+  const { user } = useAuth()
+  const [reviews, setReviews] = useState<Review[]>(fallbackReviews)
+  const [loading, setLoading] = useState(true)
   const [filterRating, setFilterRating] = useState<number | null>(null)
   const [showReviewForm, setShowReviewForm] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [newReview, setNewReview] = useState({
     rating: 5,
     title: "",
-    content: "",
-    name: ""
+    comment: "",
+    name: "",
+    email: ""
   })
+
+  // Fetch reviews on mount
+  useEffect(() => {
+    fetchReviews()
+  }, [productId])
+
+  const fetchReviews = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/reviews-rtdb?productId=${productId}&status=approved`)
+      const data = await response.json()
+
+      if (data.success && data.reviews && data.reviews.length > 0) {
+        setReviews(data.reviews)
+      } else {
+        // Use fallback reviews if no real reviews exist
+        setReviews(fallbackReviews)
+      }
+    } catch (error) {
+      console.error('Error fetching reviews:', error)
+      // Use fallback reviews on error
+      setReviews(fallbackReviews)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Calculate rating distribution
   const ratingCounts = [5, 4, 3, 2, 1].map(rating => ({
@@ -112,11 +168,97 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
     ? reviews.filter(r => r.rating === filterRating)
     : reviews
 
-  const handleSubmitReview = () => {
-    // In real app, this would submit to API
-    console.log("New review:", newReview)
-    setShowReviewForm(false)
-    setNewReview({ rating: 5, title: "", content: "", name: "" })
+  const handleSubmitReview = async () => {
+    // Validate form
+    if (!newReview.name || !newReview.email || !newReview.title || !newReview.comment) {
+      toast.error('Please fill in all required fields')
+      return
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newReview.email)) {
+      toast.error('Please enter a valid email address')
+      return
+    }
+
+    setSubmitting(true)
+
+    try {
+      const response = await fetch('/api/reviews-rtdb', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId,
+          userId: user?.uid || 'guest-' + Date.now(),
+          userName: newReview.name,
+          userEmail: newReview.email,
+          rating: newReview.rating,
+          title: newReview.title,
+          comment: newReview.comment
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success('Thank you! Your review has been published successfully.')
+        setShowReviewForm(false)
+        setNewReview({ rating: 5, title: "", comment: "", name: "", email: "" })
+        // Refresh reviews
+        fetchReviews()
+      } else {
+        toast.error(data.error || 'Failed to submit review')
+      }
+    } catch (error) {
+      console.error('Error submitting review:', error)
+      toast.error('Failed to submit review. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleHelpful = async (reviewId: string, helpful: boolean) => {
+    try {
+      // Store in localStorage to prevent multiple votes
+      const voteKey = `review-vote-${reviewId}`
+      if (localStorage.getItem(voteKey)) {
+        toast.error('You have already voted on this review')
+        return
+      }
+
+      const response = await fetch('/api/reviews-rtdb', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          reviewId, 
+          action: helpful ? 'helpful' : 'notHelpful' 
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        localStorage.setItem(voteKey, helpful ? 'yes' : 'no')
+        toast.success('Thank you for your feedback!')
+        // Refresh reviews to show updated counts
+        fetchReviews()
+      } else {
+        toast.error('Failed to submit feedback')
+      }
+    } catch (error) {
+      console.error('Error submitting helpful vote:', error)
+      toast.error('Failed to submit feedback')
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D4AF37] mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading reviews...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -206,51 +348,59 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium mb-2">Your Name</label>
+            <label className="block text-sm font-medium mb-2">Your Name *</label>
             <Input
               value={newReview.name}
               onChange={(e) => setNewReview({ ...newReview, name: e.target.value })}
               placeholder="Enter your name"
+              required
             />
+          </div>
+
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Your Email *</label>
+            <Input
+              type="email"
+              value={newReview.email}
+              onChange={(e) => setNewReview({ ...newReview, email: e.target.value })}
+              placeholder="your@email.com"
+              required
+            />
+            <p className="text-xs text-muted-foreground mt-1">Your email will not be published</p>
           </div>
 
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium mb-2">Review Title</label>
+            <label className="block text-sm font-medium mb-2">Review Title *</label>
             <Input
               value={newReview.title}
               onChange={(e) => setNewReview({ ...newReview, title: e.target.value })}
               placeholder="Summarize your experience"
+              required
             />
           </div>
 
           {/* Content */}
           <div>
-            <label className="block text-sm font-medium mb-2">Your Review</label>
+            <label className="block text-sm font-medium mb-2">Your Review *</label>
             <Textarea
-              value={newReview.content}
-              onChange={(e) => setNewReview({ ...newReview, content: e.target.value })}
+              value={newReview.comment}
+              onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
               placeholder="Share your thoughts about this product..."
               rows={5}
+              required
             />
-          </div>
-
-          {/* Image Upload */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Add Photos (Optional)</label>
-            <Button variant="outline" className="w-full">
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Images
-            </Button>
           </div>
 
           {/* Submit Buttons */}
           <div className="flex gap-3">
             <Button 
               onClick={handleSubmitReview}
+              disabled={submitting}
               className="flex-1 bg-[#D4AF37] hover:bg-[#B8941F]"
             >
-              Submit Review
+              {submitting ? 'Submitting...' : 'Submit Review'}
             </Button>
             <Button 
               onClick={() => setShowReviewForm(false)}
@@ -271,13 +421,13 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
               <div className="flex items-start gap-4">
                 <Avatar className="w-12 h-12">
                   <AvatarFallback className="bg-[#D4AF37] text-white">
-                    {review.author.charAt(0)}
+                    {review.userName.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold">{review.author}</span>
-                    {review.verified && (
+                    <span className="font-semibold">{review.userName}</span>
+                    {review.verifiedPurchase && (
                       <Badge variant="outline" className="text-xs">
                         <Check className="w-3 h-3 mr-1" />
                         Verified Purchase
@@ -298,7 +448,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
                       ))}
                     </div>
                     <span className="text-sm text-muted-foreground">
-                      {new Date(review.date).toLocaleDateString('en-IN', {
+                      {new Date(review.createdAt?.seconds ? review.createdAt.seconds * 1000 : review.createdAt).toLocaleDateString('en-IN', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric'
@@ -310,7 +460,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
             </div>
 
             <h4 className="font-semibold mb-2">{review.title}</h4>
-            <p className="text-muted-foreground mb-4">{review.content}</p>
+            <p className="text-muted-foreground mb-4">{review.comment}</p>
 
             {/* Review Images */}
             {review.images && review.images.length > 0 && (
@@ -331,11 +481,21 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
             {/* Helpful Buttons */}
             <div className="flex items-center gap-4 pt-4 border-t border-border">
               <span className="text-sm text-muted-foreground">Was this helpful?</span>
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2"
+                onClick={() => handleHelpful(review.id, true)}
+              >
                 <ThumbsUp className="w-4 h-4" />
                 Yes ({review.helpful})
               </Button>
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2"
+                onClick={() => handleHelpful(review.id, false)}
+              >
                 <ThumbsDown className="w-4 h-4" />
                 No ({review.notHelpful})
               </Button>

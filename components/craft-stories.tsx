@@ -1,11 +1,15 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Star, TrendingDown } from "lucide-react"
+import { Star, TrendingDown, ShoppingCart, MessageCircle, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Link from "next/link"
 import Image from "next/image"
 import { useEffect, useState } from "react"
+import { useCart } from "@/lib/cart-context"
+import { toast } from "sonner"
 
 const stories = [
   {
@@ -68,23 +72,80 @@ const stories = [
 export default function CraftStories() {
   const [products, setProducts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedProduct, setSelectedProduct] = useState<any>(null)
+  const [showDialog, setShowDialog] = useState(false)
+  const { addToCart } = useCart()
 
-  useEffect(() => {
-    async function fetchProducts() {
+  // Video mapping for specific products (only for craft stories section)
+  const productVideos: Record<string, string> = {
+    "Premium Furniture Collection Set": "/videos/premimumfurniturecollectionsets.mov",
+    "Industrial Bar Stool": "/videos/barchair.mov",
+    "Cross-Back Dining Chair": "/videos/crosschair.mov",
+    "C-Shape Accent Table": "/videos/cshape.mov",
+    // Add more product-video mappings here as needed
+  }
+
+    useEffect(() => {
+    const fetchProducts = async () => {
       try {
-        const response = await fetch('/api/products?limit=6')
+        const response = await fetch('/api/products?limit=7')
+        if (!response.ok) throw new Error('Failed to fetch products')
+        
         const data = await response.json()
-        if (data.success) {
-          setProducts(data.data.slice(0, 6))
-        }
+        
+        // Show only products with videos (4 products)
+        const allowedProducts = [
+          "Cross-Back Dining Chair",
+          "Industrial Bar Stool",
+          "C-Shape Accent Table",
+          "Premium Furniture Collection Set"
+        ]
+        
+        const productsWithVideos = data.data
+          .filter((product: any) => allowedProducts.includes(product.name))
+          .map((product: any) => ({
+            ...product,
+            craftStoryVideo: productVideos[product.name]
+          }))
+        
+        setProducts(productsWithVideos)
       } catch (error) {
         console.error('Error fetching products:', error)
       } finally {
         setLoading(false)
       }
     }
+
     fetchProducts()
   }, [])
+
+  const handleProductClick = (product: any) => {
+    setSelectedProduct(product)
+    setShowDialog(true)
+  }
+
+  const handleBuyNow = () => {
+    if (selectedProduct) {
+      addToCart({
+        id: selectedProduct._id,
+        name: selectedProduct.name,
+        price: selectedProduct.price,
+        image: selectedProduct.image,
+        category: selectedProduct.category
+      })
+      toast.success(`${selectedProduct.name} added to cart!`)
+      setShowDialog(false)
+      window.location.href = '/checkout'
+    }
+  }
+
+  const handleWhatsAppContact = () => {
+    if (selectedProduct) {
+      const message = `Hi, I'm interested in the ${selectedProduct.name}. Can you provide more details about pricing and customization?`
+      window.open(`https://wa.me/919950036077?text=${encodeURIComponent(message)}`, '_blank')
+      setShowDialog(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -140,20 +201,40 @@ export default function CraftStories() {
                   transition={{ delay: index * 0.1 }}
                   className="flex-shrink-0 w-64 md:w-72 snap-start group"
                 >
-                  <Link href={`/products/${product._id}`}>
+                  <div 
+                    onClick={() => handleProductClick(product)}
+                    className="cursor-pointer"
+                  >
                     <div className="bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100 h-full">
-                      {/* Image */}
+                      {/* Video/Image */}
                       <div className="relative aspect-[4/3] bg-gradient-to-br from-[#F5EFE7] to-[#E8DCC4] overflow-hidden">
-                        <Image
-                          src={product.image}
-                          alt={product.name}
-                          fill
-                          className="object-cover group-hover:scale-110 transition-transform duration-700"
-                          sizes="(max-width: 768px) 256px, 288px"
-                        />
+                        {product.craftStoryVideo ? (
+                          <video
+                            src={product.craftStoryVideo}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                          />
+                        ) : (
+                          <Image
+                            src={product.image}
+                            alt={product.name}
+                            fill
+                            className="object-cover group-hover:scale-110 transition-transform duration-700"
+                            sizes="(max-width: 768px) 256px, 288px"
+                          />
+                        )}
                         
-                        {/* Discount Badge */}
-                        {discount > 0 && (
+                        {/* Discount Badge or Exclusive Badge */}
+                        {product.isExclusive ? (
+                          <div className="absolute top-3 md:top-4 left-3 md:left-4">
+                            <div className="bg-[#D4AF37] text-black px-2 md:px-3 py-1 rounded-lg font-bold text-xs md:text-sm">
+                              Exclusive
+                            </div>
+                          </div>
+                        ) : discount > 0 && (
                           <div className="absolute top-3 md:top-4 left-3 md:left-4">
                             <div className="bg-green-500 text-white px-2 md:px-3 py-1 rounded-lg font-bold flex items-center gap-1 text-xs md:text-sm">
                               <TrendingDown className="w-3 h-3 md:w-4 md:h-4" />
@@ -188,9 +269,17 @@ export default function CraftStories() {
 
                         {/* Price */}
                         <div className="flex items-center gap-2 mb-3">
-                          <span className="text-lg md:text-xl font-bold text-[#1A2642]">₹{product.price.toLocaleString()}</span>
-                          {product.originalPrice && (
-                            <span className="text-xs md:text-sm text-gray-400 line-through">₹{product.originalPrice.toLocaleString()}</span>
+                          {product.isExclusive ? (
+                            <span className="text-sm md:text-base font-bold text-[#D4AF37]">
+                              {product.exclusivePrice || "Contact for Price"}
+                            </span>
+                          ) : (
+                            <>
+                              <span className="text-lg md:text-xl font-bold text-[#1A2642]">₹{product.price.toLocaleString()}</span>
+                              {product.originalPrice && (
+                                <span className="text-xs md:text-sm text-gray-400 line-through">₹{product.originalPrice.toLocaleString()}</span>
+                              )}
+                            </>
                           )}
                         </div>
 
@@ -200,13 +289,114 @@ export default function CraftStories() {
                         </p>
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 </motion.div>
               )
             })}
           </div>
         </div>
       </div>
+
+      {/* Product Dialog */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{selectedProduct?.name}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Product Image/Video */}
+            <div className="relative aspect-video rounded-lg overflow-hidden bg-gradient-to-br from-[#F5EFE7] to-[#E8DCC4]">
+              {selectedProduct?.craftStoryVideo ? (
+                <video
+                  src={selectedProduct.craftStoryVideo}
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  controls
+                />
+              ) : selectedProduct?.image && (
+                <Image
+                  src={selectedProduct.image}
+                  alt={selectedProduct.name}
+                  fill
+                  className="object-cover"
+                />
+              )}
+            </div>
+
+            {/* Price */}
+            <div className="flex items-center gap-3">
+              {selectedProduct?.isExclusive ? (
+                <>
+                  <span className="text-xl font-bold text-[#D4AF37]">
+                    {selectedProduct.exclusivePrice || "Contact for Custom Price"}
+                  </span>
+                  <Badge className="bg-[#D4AF37] text-black">
+                    Exclusive
+                  </Badge>
+                </>
+              ) : (
+                <>
+                  <span className="text-2xl font-bold text-[#D4AF37]">
+                    ₹{selectedProduct?.price.toLocaleString()}
+                  </span>
+                  {selectedProduct?.originalPrice && (
+                    <>
+                      <span className="text-lg text-gray-400 line-through">
+                        ₹{selectedProduct.originalPrice.toLocaleString()}
+                      </span>
+                      <Badge className="bg-green-500">
+                        {Math.round(((selectedProduct.originalPrice - selectedProduct.price) / selectedProduct.originalPrice) * 100)}% OFF
+                      </Badge>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Description */}
+            <p className="text-sm text-muted-foreground">
+              {selectedProduct?.description}
+            </p>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              {selectedProduct?.isExclusive ? (
+                <Button
+                  onClick={handleWhatsAppContact}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Contact on WhatsApp
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    onClick={handleBuyNow}
+                    className="flex-1 bg-[#D4AF37] hover:bg-[#B8941F] text-black"
+                  >
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    Buy Now
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowDialog(false)
+                      window.location.href = `/products/${selectedProduct._id}`
+                    }}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    View Details
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <style jsx global>{`
         .scrollbar-hide::-webkit-scrollbar {

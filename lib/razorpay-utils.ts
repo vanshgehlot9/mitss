@@ -16,21 +16,47 @@ import {
 
 /**
  * Razorpay Configuration
+ * Using function to ensure fresh environment variable reads
  */
-export const razorpayConfig = {
-  keyId: process.env.RAZORPAY_KEY_ID!,
-  keySecret: process.env.RAZORPAY_KEY_SECRET!,
-  webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET!,
-};
+export function getRazorpayConfig() {
+  return {
+    keyId: process.env.RAZORPAY_KEY_ID || '',
+    keySecret: process.env.RAZORPAY_KEY_SECRET || '',
+    webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || '',
+  };
+}
+
+// Legacy export for backwards compatibility
+export const razorpayConfig = getRazorpayConfig();
 
 /**
  * Validate Razorpay Configuration
  */
 export function validateRazorpayConfig(): boolean {
-  if (!razorpayConfig.keyId || !razorpayConfig.keySecret) {
-    console.error('Razorpay credentials are missing in environment variables');
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  
+  console.log('Validating Razorpay Config:', {
+    keyIdExists: !!keyId,
+    keySecretExists: !!keySecret,
+    keyIdLength: keyId?.length || 0,
+    keySecretLength: keySecret?.length || 0,
+  });
+  
+  if (!keyId || !keySecret) {
+    console.error('Razorpay configuration validation failed');
+    console.error('Missing:', {
+      keyId: !keyId ? 'RAZORPAY_KEY_ID not found' : 'OK',
+      keySecret: !keySecret ? 'RAZORPAY_KEY_SECRET not found' : 'OK',
+    });
     return false;
   }
+  
+  if (keyId.length === 0 || keySecret.length === 0) {
+    console.error('Razorpay credentials are empty strings');
+    return false;
+  }
+  
   return true;
 }
 
@@ -77,6 +103,7 @@ export async function createRazorpayOrder(params: {
     throw new Error('Razorpay configuration is invalid');
   }
 
+  const config = getRazorpayConfig();
   const amountInPaise = convertToPaise(params.amount);
 
   const orderData = {
@@ -86,13 +113,19 @@ export async function createRazorpayOrder(params: {
     notes: params.notes || {},
   };
 
+  console.log('Creating Razorpay order with:', {
+    amount: amountInPaise,
+    currency: orderData.currency,
+    keyIdPrefix: config.keyId?.substring(0, 8) + '...',
+  });
+
   try {
     const response = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Basic ${Buffer.from(
-          `${razorpayConfig.keyId}:${razorpayConfig.keySecret}`
+          `${config.keyId}:${config.keySecret}`
         ).toString('base64')}`,
       },
       body: JSON.stringify(orderData),
