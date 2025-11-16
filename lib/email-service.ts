@@ -149,6 +149,40 @@ export async function sendContactForm(data: {
   }
 }
 
+/**
+ * Generic email sending helper used by inventory alerts and other system notifications.
+ * Provides a minimal wrapper around Resend for simple transactional messages.
+ */
+export async function sendEmail(params: {
+  to: string | string[]
+  subject: string
+  html: string
+  text?: string
+  attachments?: Array<{ filename: string; content: Buffer | string }>
+}) {
+  try {
+    const { to, subject, html, text, attachments } = params
+    const emailPayload: any = {
+      from: `${EMAIL_FROM_NAME} <${EMAIL_FROM}>`,
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      html,
+    }
+    if (text) emailPayload.text = text
+    if (attachments && attachments.length) emailPayload.attachments = attachments
+
+    const { data, error } = await resend.emails.send(emailPayload)
+    if (error) {
+      console.error('sendEmail failed:', error)
+      return { success: false, error }
+    }
+    return { success: true, data }
+  } catch (error) {
+    console.error('sendEmail exception:', error)
+    return { success: false, error }
+  }
+}
+
 // Generic email sending function
 export async function sendPasswordReset(email: string, resetLink: string) {
   try {
