@@ -207,3 +207,47 @@ function generateFacets(products: any[]) {
     ratings: ratings.filter(r => r.count > 0)
   }
 }
+
+/**
+ * Get search autocomplete suggestions
+ */
+export async function getSearchAutocompleteSuggestions(query: string, limit: number = 10) {
+  if (!query || query.length < 2) return []
+
+  try {
+    const q = query.toLowerCase()
+    const productsCollection = collection(db, 'products')
+    const snapshots = await getDocs(productsCollection)
+    
+    const suggestions = new Set<string>()
+
+    snapshots.forEach((doc) => {
+      const product = doc.data()
+      
+      // Add product names
+      if (product.name?.toLowerCase().includes(q)) {
+        suggestions.add(product.name)
+      }
+      
+      // Add categories
+      if (product.category?.toLowerCase().includes(q)) {
+        suggestions.add(product.category)
+      }
+      
+      // Add from description
+      if (product.description?.toLowerCase().includes(q)) {
+        const words = product.description.split(/\s+/)
+        words.forEach((word: string) => {
+          if (word.toLowerCase().startsWith(q) && word.length > 2) {
+            suggestions.add(word)
+          }
+        })
+      }
+    })
+
+    return Array.from(suggestions).slice(0, limit)
+  } catch (error) {
+    console.error('Autocomplete error:', error)
+    return []
+  }
+}

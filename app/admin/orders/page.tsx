@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { doc, updateDoc, writeBatch } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { 
@@ -160,11 +158,16 @@ export default function OrdersPage() {
   const updateOrderStatus = async (orderId: string, newStatus: string, order: Order) => {
     setUpdating(orderId)
     try {
-      const orderRef = doc(db, 'orders', orderId)
-      await updateDoc(orderRef, {
-        status: newStatus,
-        updatedAt: new Date()
+      // Update via API
+      const response = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
       })
+      
+      if (!response.ok) {
+        throw new Error('Failed to update order')
+      }
 
       await sendOrderNotification(
         order.userId,
@@ -202,17 +205,16 @@ export default function OrdersPage() {
     }
 
     try {
-      const batch = writeBatch(db)
-      
-      selectedOrders.forEach(orderId => {
-        const orderRef = doc(db, 'orders', orderId)
-        batch.update(orderRef, {
-          status: newStatus,
-          updatedAt: new Date()
-        })
+      // Update via API
+      const response = await fetch('/api/admin/orders/bulk-update', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderIds: selectedOrders, status: newStatus })
       })
-
-      await batch.commit()
+      
+      if (!response.ok) {
+        throw new Error('Failed to update orders')
+      }
 
       setOrders(orders.map(o => 
         selectedOrders.includes(o.id) ? { ...o, status: newStatus, updatedAt: new Date() } : o

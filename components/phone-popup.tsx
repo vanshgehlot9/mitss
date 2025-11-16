@@ -24,9 +24,26 @@ export default function PhonePopup() {
     }
   }, [])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (phone.length >= 10) {
+      // Track phone number in analytics
+      try {
+        await fetch('/api/analytics/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            page: window.location.pathname,
+            event: 'phone_submit',
+            phoneNumber: phone,
+            referrer: document.referrer || 'direct',
+            userAgent: navigator.userAgent
+          })
+        })
+      } catch (error) {
+        console.error('Analytics tracking error:', error)
+      }
+
       setIsSubmitted(true)
       sessionStorage.setItem("hasSeenPhonePopup", "true")
       

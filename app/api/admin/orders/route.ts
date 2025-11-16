@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/firebase'
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore'
+import { requireAdmin } from '@/lib/ensure-admin'
+import { database, ref, get, query, orderByChild, limitToLast } from '@/lib/firebase-realtime'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export async function GET(request: NextRequest) {
   try {
-    if (!db) {
+    const authErr = await requireAdmin(request)
+    if (authErr) return authErr
+
+    if (!database) {
       return NextResponse.json(
         { success: false, error: 'Database not initialized' },
         { status: 500 }
@@ -17,24 +20,23 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const limitParam = parseInt(searchParams.get('limit') || '50')
     
-    // Fetch orders with limit
-    const ordersQuery = query(
-      collection(db, 'orders'),
-      orderBy('createdAt', 'desc'),
-      limit(limitParam)
-    )
+    // Fetch orders from Realtime Database
+    const ordersRef = ref(database, 'orders')
+    const snapshot = await get(ordersRef)
     
-    const snapshot = await getDocs(ordersQuery)
+    let orders: any[] = []
     
-    const orders = snapshot.docs.map(doc => {
-      const data = doc.data()
-      return {
-        id: doc.id,
+    if (snapshot.exists()) {
+      const ordersData = snapshot.val()
+      
+      // Convert object to array and sort by createdAt
+      orders = Object.entries(ordersData).map(([id, data]: [string, any]) => ({
+        id,
         orderNumber: data.orderNumber,
         userName: data.userName,
         userEmail: data.userEmail,
-        status: data.status,
-        paymentStatus: data.paymentStatus,
+        status: data.status || 'pending',
+        paymentStatus: data.paymentStatus || 'pending',
         total: data.total || data.pricing?.total || 0,
         subtotal: data.subtotal || data.pricing?.subtotal || 0,
         shipping: data.shipping || data.pricing?.shipping || 0,
@@ -43,10 +45,16 @@ export async function GET(request: NextRequest) {
         shippingAddress: data.shippingAddress,
         paymentMethod: data.paymentMethod,
         trackingNumber: data.trackingNumber,
-        createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-        updatedAt: data.updatedAt?.toDate?.()?.toISOString() || null
-      }
-    })
+        createdAt: data.createdAt || new Date().toISOString(),
+        updatedAt: data.updatedAt || null
+      }))
+      
+      // Sort by createdAt descending
+      orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      
+      // Apply limit
+      orders = orders.slice(0, limitParam)
+    }
     
     // Calculate stats
     const stats = {

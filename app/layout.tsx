@@ -6,6 +6,7 @@ import { AuthProvider } from '@/lib/auth-context'
 import { CartProvider } from '@/lib/cart-context'
 import { Toaster } from '@/components/ui/sonner'
 import ClientComponents from '@/components/client-components'
+import AnalyticsTracker from '@/components/analytics-tracker'
 import './globals.css'
 
 const poppins = Poppins({ 
@@ -169,6 +170,7 @@ export default function RootLayout({
         >
           <AuthProvider>
             <CartProvider>
+              <AnalyticsTracker />
               <ClientComponents />
               {children}
               <Toaster position="top-center" richColors />

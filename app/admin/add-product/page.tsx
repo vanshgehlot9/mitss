@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { createProduct } from "@/hooks/use-products"
 import { toast } from "sonner"
 import { Loader2, Upload, X } from "lucide-react"
+import ImageUpload from '@/components/admin/image-upload'
 
 export default function AdminAddProductPage() {
   const [loading, setLoading] = useState(false)
@@ -20,7 +21,7 @@ export default function AdminAddProductPage() {
     originalPrice: "",
     rating: "4.5",
     reviews: "0",
-    image: "",
+    images: [] as string[],
     badge: "",
     badgeColor: "bg-[#D4AF37]",
     material: "",
@@ -40,21 +41,24 @@ export default function AdminAddProductPage() {
     setLoading(true)
 
     try {
-      let imageUrl = formData.image
+      const images: string[] = (formData as any).images || []
 
-      // If there's an image path, use it directly
-      if (!imageUrl) {
-        toast.error("Please provide an image path")
+      // Require at least one image
+      if (!images || images.length === 0) {
+        toast.error("Please upload at least one product image")
         setLoading(false)
         return
-      }      const productData = {
+      }
+
+      const productData = {
         ...formData,
         id: Date.now(), // Temporary ID
-        price: parseFloat(formData.price),
-        originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : undefined,
-        rating: parseFloat(formData.rating),
-        reviews: parseInt(formData.reviews),
-        image: imageUrl,
+        price: parseFloat((formData as any).price),
+        originalPrice: (formData as any).originalPrice ? parseFloat((formData as any).originalPrice) : undefined,
+        rating: parseFloat((formData as any).rating),
+        reviews: parseInt((formData as any).reviews),
+        image: images[0], // primary image for backward compatibility
+        images: images,
         features: [],
         color: [],
         dimensions: {
@@ -77,7 +81,7 @@ export default function AdminAddProductPage() {
           originalPrice: "",
           rating: "4.5",
           reviews: "0",
-          image: "",
+          images: [],
           badge: "",
           badgeColor: "bg-[#D4AF37]",
           material: "",
@@ -208,38 +212,18 @@ export default function AdminAddProductPage() {
 
                 {/* Image Upload Section */}
                 <div className="space-y-4">
-                  <Label>Product Image Path *</Label>
-                  
-                  <div className="space-y-2">
-                    <Input
-                      id="image"
-                      name="image"
-                      value={formData.image}
-                      onChange={handleChange}
-                      required
-                      placeholder="/images/products/exclusiveproduct1.png"
-                    />
-                    <p className="text-xs text-gray-500">
-                      Upload image to <code>/public/images/products/</code> folder first, then enter path here
-                    </p>
-                  </div>
+                  <Label>Product Images *</Label>
 
-                  {/* Image Preview */}
-                  {formData.image && (
-                    <div className="mt-4">
-                      <p className="text-sm text-gray-600 mb-2">Preview:</p>
-                      <div className="relative w-full max-w-md h-64 bg-gray-100 rounded-lg overflow-hidden">
-                        <img
-                          src={formData.image}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="16" fill="%23999">Image not found</text></svg>'
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )}
+                  <ImageUpload
+                    value={(formData as any).images || []}
+                    onChange={(urls: string[]) => setFormData(prev => ({ ...prev, images: urls }))}
+                    maxImages={5}
+                    folder="mitss/products"
+                  />
+
+                  <p className="text-xs text-gray-500">
+                    Images are uploaded to Cloudinary and stored as secure URLs. The first image will be used as the primary product image.
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

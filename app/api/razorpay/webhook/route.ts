@@ -15,6 +15,7 @@ import {
   WebhookEvent,
   COLLECTIONS,
 } from '@/lib/razorpay-schema';
+import { finalizeReservation, restoreReservation } from '@/lib/inventory-alerts';
 
 export async function POST(request: NextRequest) {
   try {
@@ -115,6 +116,26 @@ export async function POST(request: NextRequest) {
         await handleRefundProcessed(entity, ordersCollection, paymentsCollection);
         break;
 
+      case 'refund.failed':
+        await handleRefundFailed(entity, ordersCollection, paymentsCollection);
+        break;
+
+      case 'payment.dispute.created':
+        await handleDisputeCreated(entity, ordersCollection, paymentsCollection);
+        break;
+
+      case 'payment.dispute.won':
+        await handleDisputeWon(entity, ordersCollection, paymentsCollection);
+        break;
+
+      case 'payment.dispute.lost':
+        await handleDisputeLost(entity, ordersCollection, paymentsCollection);
+        break;
+
+      case 'invoice.paid':
+        await handleInvoicePaid(entity, ordersCollection);
+        break;
+
       default:
         console.log('Unhandled webhook event:', event);
     }
@@ -199,6 +220,9 @@ async function handlePaymentCaptured(
     { upsert: true }
   );
 
+  // Get order to find reservation ID
+  const order = await ordersCollection.findOne({ razorpayOrderId });
+
   // Update order status
   await ordersCollection.updateOne(
     { razorpayOrderId },
@@ -213,6 +237,17 @@ async function handlePaymentCaptured(
       },
     }
   );
+
+  // Finalize reservation if it exists
+  if (order?.reservationId) {
+    try {
+      await finalizeReservation(order.reservationId);
+      console.log('Reservation finalized:', order.reservationId);
+    } catch (error) {
+      console.error('Error finalizing reservation:', error);
+      // Log but don't throw - order payment is already recorded
+    }
+  }
 
   console.log('Payment captured:', paymentId);
 
@@ -237,6 +272,9 @@ async function handlePaymentFailed(
     error_description,
     error_reason,
   } = payment;
+
+  // Get order to find reservation ID
+  const order = await ordersCollection.findOne({ razorpayOrderId });
 
   // Update or create payment record
   await paymentsCollection.updateOne(
@@ -267,6 +305,17 @@ async function handlePaymentFailed(
       },
     }
   );
+
+  // Restore reservation if it exists
+  if (order?.reservationId) {
+    try {
+      await restoreReservation(order.reservationId);
+      console.log('Reservation restored:', order.reservationId);
+    } catch (error) {
+      console.error('Error restoring reservation:', error);
+      // Log but don't throw - order status is already updated
+    }
+  }
 
   console.log('Payment failed:', paymentId, error_description);
 
@@ -410,6 +459,214 @@ async function handleRefundProcessed(
   // const payment = await paymentsCollection.findOne({ paymentId });
   // const order = await ordersCollection.findOne({ orderId: payment.orderId });
   // await sendRefundConfirmationEmail(order);
+}
+
+/**
+ * Handle refund.failed event
+ */
+async function handleRefundFailed(
+  refund: any,
+  ordersCollection: any,
+  paymentsCollection: any
+) {
+  const { id: refundId, payment_id: paymentId, amount, reason } = refund;
+
+  console.error('Refund failed:', refundId, reason);
+
+  // Update payment record
+  await paymentsCollection.updateOne(
+    { paymentId },
+    {
+      $set: {
+        refundStatus: 'failed',
+        refundFailureReason: reason,
+        updatedAt: new Date(),
+      },
+    }
+  );
+
+  // Log alert for admin review
+  const db = await getDatabase();
+  const alertsCollection = db.collection(COLLECTIONS.ALERTS || 'alerts');
+  
+  try {
+    await alertsCollection.insertOne({
+      type: 'refund_failed',
+      refundId,
+      paymentId,
+      reason,
+      createdAt: new Date(),
+      resolved: false,
+    });
+  } catch (error) {
+    console.error('Error logging refund failure alert:', error);
+  }
+}
+
+/**
+ * Handle payment.dispute.created event
+ */
+async function handleDisputeCreated(
+  dispute: any,
+  ordersCollection: any,
+  paymentsCollection: any
+) {
+  const { id: disputeId, payment_id: paymentId, amount, reason_code, evidence_due_date } = dispute;
+
+  console.warn('Dispute created:', disputeId, reason_code);
+
+  // Update payment record
+  await paymentsCollection.updateOne(
+    { paymentId },
+    {
+      $set: {
+        disputeId,
+        disputeStatus: 'created',
+        disputeReason: reason_code,
+        evidenceDueDate: evidence_due_date,
+        updatedAt: new Date(),
+      },
+    }
+  );
+
+  // Log dispute alert for admin
+  const db = await getDatabase();
+  const disputesCollection = db.collection(COLLECTIONS.DISPUTES || 'disputes');
+  
+  try {
+    await disputesCollection.insertOne({
+      disputeId,
+      paymentId,
+      amount,
+      reason: reason_code,
+      status: 'created',
+      evidenceDueDate: evidence_due_date,
+      createdAt: new Date(),
+      requiresAction: true,
+    });
+  } catch (error) {
+    console.error('Error logging dispute:', error);
+  }
+}
+
+/**
+ * Handle payment.dispute.won event
+ */
+async function handleDisputeWon(
+  dispute: any,
+  ordersCollection: any,
+  paymentsCollection: any
+) {
+  const { id: disputeId, payment_id: paymentId, amount } = dispute;
+
+  console.log('Dispute won:', disputeId);
+
+  // Update payment record
+  await paymentsCollection.updateOne(
+    { paymentId },
+    {
+      $set: {
+        disputeStatus: 'won',
+        updatedAt: new Date(),
+      },
+    }
+  );
+
+  // Update dispute record
+  const db = await getDatabase();
+  const disputesCollection = db.collection(COLLECTIONS.DISPUTES || 'disputes');
+  
+  try {
+    await disputesCollection.updateOne(
+      { disputeId },
+      {
+        $set: {
+          status: 'won',
+          resolvedAt: new Date(),
+          updatedAt: new Date(),
+        },
+      }
+    );
+  } catch (error) {
+    console.error('Error updating dispute won status:', error);
+  }
+}
+
+/**
+ * Handle payment.dispute.lost event
+ */
+async function handleDisputeLost(
+  dispute: any,
+  ordersCollection: any,
+  paymentsCollection: any
+) {
+  const { id: disputeId, payment_id: paymentId, amount, reason_code } = dispute;
+
+  console.error('Dispute lost:', disputeId, reason_code);
+
+  // Update payment record
+  await paymentsCollection.updateOne(
+    { paymentId },
+    {
+      $set: {
+        disputeStatus: 'lost',
+        updatedAt: new Date(),
+      },
+    }
+  );
+
+  // Update dispute record and alert admin
+  const db = await getDatabase();
+  const disputesCollection = db.collection(COLLECTIONS.DISPUTES || 'disputes');
+  const alertsCollection = db.collection(COLLECTIONS.ALERTS || 'alerts');
+  
+  try {
+    await disputesCollection.updateOne(
+      { disputeId },
+      {
+        $set: {
+          status: 'lost',
+          resolvedAt: new Date(),
+          updatedAt: new Date(),
+        },
+      }
+    );
+
+    // Alert admin
+    await alertsCollection.insertOne({
+      type: 'dispute_lost',
+      disputeId,
+      paymentId,
+      amount,
+      createdAt: new Date(),
+      requiresAction: true,
+    });
+  } catch (error) {
+    console.error('Error updating dispute lost status:', error);
+  }
+}
+
+/**
+ * Handle invoice.paid event
+ */
+async function handleInvoicePaid(invoice: any, ordersCollection: any) {
+  const { id: invoiceId, amount, status, order_id: razorpayOrderId } = invoice;
+
+  console.log('Invoice paid:', invoiceId);
+
+  // Update order status if exists
+  if (razorpayOrderId) {
+    await ordersCollection.updateOne(
+      { razorpayOrderId },
+      {
+        $set: {
+          invoicePaid: true,
+          invoicePaidAt: new Date(),
+          updatedAt: new Date(),
+        },
+      }
+    );
+  }
 }
 
 /**

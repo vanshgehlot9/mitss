@@ -1,29 +1,21 @@
 import { NextRequest, NextResponse } from "next/server"
-// Firestore disabled - using Realtime Database
-// import { db } from "@/lib/firebase"
-// import { collection, query, where, getDocs, Timestamp } from "firebase/firestore"
+import { requireAdmin } from '@/lib/ensure-admin'
+import { database, ref, get } from '@/lib/firebase-realtime'
 
 // Force dynamic rendering - don't try to statically analyze this route
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 export async function GET(request: NextRequest) {
-  // Firestore not configured - return mock data or error
-  return NextResponse.json(
-    { 
-      error: "Firestore not configured. Admin stats temporarily unavailable.",
-      message: "Using Firebase Realtime Database for all operations. Admin dashboard stats will be available soon."
-    },
-    { status: 503 }
-  )
-  
-  /* FIRESTORE CODE DISABLED
   try {
-    // Check if Firestore is available
-    if (!db) {
+    // Server-side admin authorization
+    const authErr = await requireAdmin(request)
+    if (authErr) return authErr
+
+    if (!database) {
       return NextResponse.json(
-        { error: "Database not configured. Please configure Firestore in environment variables." },
-        { status: 503 }
+        { success: false, error: 'Database not initialized' },
+        { status: 500 }
       )
     }
 
@@ -37,13 +29,21 @@ export async function GET(request: NextRequest) {
     const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
     const previousStartDate = new Date(startDate.getTime() - days * 24 * 60 * 60 * 1000)
 
-    // Fetch all orders from Firestore
-    const ordersSnapshot = await getDocs(collection(db, "orders"))
-    const allOrders = ordersSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate()
-    }))
+    // Fetch all orders from Realtime Database
+    const ordersRef = ref(database, 'orders')
+    const ordersSnapshot = await get(ordersRef)
+    
+    const allOrders: any[] = []
+    if (ordersSnapshot.exists()) {
+      const ordersData = ordersSnapshot.val()
+      Object.entries(ordersData).forEach(([id, data]: [string, any]) => {
+        allOrders.push({
+          id,
+          ...data,
+          createdAt: new Date(data.createdAt)
+        })
+      })
+    }
 
     // Filter orders for current period
     const currentOrders = allOrders.filter(order => 
@@ -96,63 +96,51 @@ export async function GET(request: NextRequest) {
         ? ((totalOrders - previousOrders) / previousOrders) * 100
         : 0
 
-    // Fetch customers from Firestore
-    const usersSnapshot = await getDocs(collection(db, "users"))
-    const allUsers = usersSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate()
-    }))
+    // Calculate customers from orders (unique emails)
+    const uniqueEmails = new Set()
+    allOrders.forEach(order => {
+      if (order.userEmail) uniqueEmails.add(order.userEmail)
+    })
+    
+    const currentCustomerEmails = new Set()
+    currentOrders.forEach(order => {
+      if (order.userEmail) currentCustomerEmails.add(order.userEmail)
+    })
+    
+    const previousCustomerEmails = new Set()
+    previousOrdersDocs.forEach(order => {
+      if (order.userEmail) previousCustomerEmails.add(order.userEmail)
+    })
 
-    const currentCustomers = allUsers.filter(user => 
-      user.createdAt && user.createdAt >= startDate
-    ).length
-
-    const previousCustomers = allUsers.filter(user =>
-      user.createdAt && 
-      user.createdAt >= previousStartDate && 
-      user.createdAt < startDate
-    ).length
+    const currentCustomers = currentCustomerEmails.size
+    const previousCustomers = previousCustomerEmails.size
 
     const customersChange =
       previousCustomers > 0
         ? ((currentCustomers - previousCustomers) / previousCustomers) * 100
         : 0
 
-    // Fetch products from Firestore
-    const productsSnapshot = await getDocs(collection(db, "products"))
-    const products = productsSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }))
-    const totalProducts = products.length
-
-    let lowStockProducts = 0
-    const productSales: Record<string, { name: string; category: string; image: string; revenue: number; units: number; stock: number }> = {}
-
-    products.forEach((product: any) => {
-      if ((product.stock || 0) < 10) {
-        lowStockProducts++
-      }
-
-      // Initialize product sales tracking
-      productSales[product.id] = {
-        name: product.name || "",
-        category: product.category || "",
-        image: product.images?.[0] || "/placeholder.jpg",
-        revenue: 0,
-        units: 0,
-        stock: product.stock || 0,
-      }
-    })
+    // Use mock data for products (since we're using initial-products)
+    const totalProducts = 50 // Approximate number
+    const lowStockProducts = 0
 
     // Calculate product sales from orders
+    const productSales: Record<string, { name: string; category: string; image: string; revenue: number; units: number; stock: number }> = {}
+
     currentOrders.forEach((order) => {
       order.items?.forEach((item: any) => {
-        if (productSales[item.id]) {
-          productSales[item.id].revenue += item.price * item.quantity
-          productSales[item.id].units += item.quantity
+        if (!productSales[item.id]) {
+          productSales[item.id] = {
+            name: item.name || "",
+            category: item.category || "",
+            image: item.image || "/placeholder.jpg",
+            revenue: 0,
+            units: 0,
+            stock: 999,
+          }
         }
+        productSales[item.id].revenue += item.price * item.quantity
+        productSales[item.id].units += item.quantity
       })
     })
 
@@ -204,7 +192,7 @@ export async function GET(request: NextRequest) {
         revenueChange: Math.round(revenueChange * 10) / 10,
         totalOrders,
         ordersChange: Math.round(ordersChange * 10) / 10,
-        totalCustomers: currentCustomers,
+        totalCustomers: uniqueEmails.size,
         customersChange: Math.round(customersChange * 10) / 10,
         totalProducts,
         productsChange: 0,
@@ -224,5 +212,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
-  */
 }

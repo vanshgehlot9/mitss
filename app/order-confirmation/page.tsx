@@ -8,6 +8,7 @@ import { motion } from "framer-motion"
 import { CheckCircle, Package, Truck, Home, Download, Mail, Phone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import Image from "next/image"
 import confetti from "canvas-confetti"
 
 export default function OrderConfirmationPage() {
@@ -29,6 +30,36 @@ export default function OrderConfirmationPage() {
       origin: { y: 0.6 }
     })
   }, [router])
+
+  const downloadInvoice = async () => {
+    if (!orderData?.orderId) {
+      alert('Order ID not found')
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/orders/invoice?orderId=${orderData.orderId}&format=pdf`)
+      
+      if (!response.ok) {
+        alert('Failed to download invoice')
+        return
+      }
+      
+      // Create blob and download
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `invoice-${orderData.orderId}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Error downloading invoice:', error)
+      alert('Error downloading invoice')
+    }
+  }
 
   if (!orderData) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>
@@ -131,8 +162,19 @@ export default function OrderConfirmationPage() {
             <div className="space-y-4 mb-6">
               {cart.map((item: any, index: number) => (
                 <div key={`${item.id}-${index}`} className="flex gap-4 pb-4 border-b border-gray-100 last:border-0">
-                  <div className="w-20 h-20 bg-[#FAF9F6] rounded-lg flex items-center justify-center text-3xl">
-                    {item.image}
+                  <div className="relative w-20 h-20 bg-[#FAF9F6] rounded-lg overflow-hidden flex-shrink-0">
+                    {item.image ? (
+                      <Image
+                        src={item.image}
+                        alt={item.name}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-[#1A2642]/30">
+                        <Package className="w-8 h-8" />
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1">
                     <h4 className="font-semibold text-[#1A2642]">{item.name}</h4>
@@ -244,7 +286,7 @@ export default function OrderConfirmationPage() {
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
             <Button
-              onClick={() => window.print()}
+              onClick={downloadInvoice}
               variant="outline"
               className="border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-white"
             >

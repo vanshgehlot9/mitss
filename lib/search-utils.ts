@@ -257,3 +257,133 @@ export function calculatePriceRanges(products: any[]): Array<{
     count: products.filter(p => p.price >= range.min && p.price < range.max).length
   })).filter(r => r.count > 0)
 }
+
+/**
+ * Calculate Levenshtein distance for fuzzy matching
+ * Helps with "Did you mean?" suggestions
+ */
+export function levenshteinDistance(str1: string, str2: string): number {
+  const track = Array(str2.length + 1)
+    .fill(null)
+    .map(() => Array(str1.length + 1).fill(0))
+
+  for (let i = 0; i <= str1.length; i++) {
+    track[0][i] = i
+  }
+  for (let j = 0; j <= str2.length; j++) {
+    track[j][0] = j
+  }
+
+  for (let j = 1; j <= str2.length; j++) {
+    for (let i = 1; i <= str1.length; i++) {
+      const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1
+      track[j][i] = Math.min(
+        track[j][i - 1] + 1,
+        track[j - 1][i] + 1,
+        track[j - 1][i - 1] + indicator
+      )
+    }
+  }
+
+  return track[str2.length][str1.length]
+}
+
+/**
+ * Get "Did you mean?" suggestions using similarity matching
+ */
+export function getDidYouMeanSuggestion(
+  query: string,
+  suggestions: string[],
+  maxDistance: number = 2
+): string | null {
+  const normalized = normalizeSearchQuery(query)
+
+  let closestMatch: { word: string; distance: number } | null = null
+
+  suggestions.forEach((suggestion) => {
+    const distance = levenshteinDistance(normalized, suggestion.toLowerCase())
+    if (distance <= maxDistance) {
+      if (!closestMatch || distance < closestMatch.distance) {
+        closestMatch = { word: suggestion, distance }
+      }
+    }
+  })
+
+  return closestMatch?.word || null
+}
+
+/**
+ * Save search query for analytics
+ */
+export async function trackSearchQuery(
+  userId: string | null,
+  query: string,
+  resultsCount: number,
+  filters?: SearchFilters
+) {
+  try {
+    const searchRecord = {
+      userId: userId || 'guest',
+      query: normalizeSearchQuery(query),
+      originalQuery: query,
+      resultsCount,
+      filters: filters || {},
+      timestamp: new Date(),
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+    }
+
+    // Send to analytics endpoint
+    if (typeof fetch !== 'undefined') {
+      await fetch('/api/search-analytics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(searchRecord),
+      }).catch((err) => console.error('Analytics tracking error:', err))
+    }
+  } catch (error) {
+    console.error('Track search error:', error)
+  }
+}
+
+/**
+ * Get top search keywords (for admin analytics)
+ */
+export function getTopSearchKeywords(limit: number = 10) {
+  // This would typically come from your analytics collection
+  // For now, return empty - implement via /api/search-analytics endpoint
+  return []
+}
+
+/**
+ * Advanced filter suggestion based on search context
+ */
+export function getSuggestedFilters(query: string): Partial<SearchFilters> {
+  const normalized = normalizeSearchQuery(query)
+  const suggestions: Partial<SearchFilters> = {}
+
+  // Auto-detect room type
+  if (normalized.includes('bedroom')) {
+    suggestions.categories = ['Beds', 'Wardrobes', 'Nightstands']
+  } else if (normalized.includes('living')) {
+    suggestions.categories = ['Sofas', 'Coffee Tables', 'TV Units']
+  } else if (normalized.includes('dining')) {
+    suggestions.categories = ['Dining Tables', 'Chairs', 'Sideboards']
+  } else if (normalized.includes('kitchen')) {
+    suggestions.categories = ['Bar Stools', 'Kitchen Islands']
+  }
+
+  // Auto-detect price range if mentioned
+  if (normalized.includes('cheap') || normalized.includes('budget')) {
+    suggestions.priceRange = { min: 0, max: 15000 }
+  } else if (normalized.includes('luxury') || normalized.includes('premium')) {
+    suggestions.priceRange = { min: 100000, max: Infinity }
+  }
+
+  // Auto-detect style
+  if (normalized.includes('modern') || normalized.includes('contemporary')) {
+    suggestions.sortBy = 'newest'
+  }
+
+  return suggestions
+}
+

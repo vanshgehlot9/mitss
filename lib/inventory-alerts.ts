@@ -1,5 +1,5 @@
 import { db } from './firebase'
-import { collection, query, where, getDocs, doc, updateDoc, addDoc, Timestamp } from 'firebase/firestore'
+import { collection, query, where, getDocs, doc, updateDoc, addDoc, Timestamp, runTransaction } from 'firebase/firestore'
 import { sendEmail } from './email-service'
 
 interface Product {
@@ -371,6 +371,86 @@ export async function runInventoryCheck(): Promise<void> {
     }
   } catch (error) {
     console.error('Error running inventory check:', error)
+    throw error
+  }
+}
+
+/**
+ * Create a stock reservation for an order to avoid overselling.
+ * This will decrement `stock` immediately and create a reservation document.
+ * On payment failure the reservation should be restored.
+ */
+export async function createStockReservation(orderId: string, items: Array<{ productId: string; quantity: number }>): Promise<string> {
+  try {
+    // Use a transaction per product to ensure we don't oversell
+    await Promise.all(items.map(async (item) => {
+      const productRef = doc(db, 'products', item.productId)
+      await runTransaction(db, async (tx) => {
+        const productSnap = await tx.get(productRef as any)
+        if (!productSnap.exists()) throw new Error(`Product not found: ${item.productId}`)
+        const data: any = productSnap.data()
+        const currentStock = data.stock || 0
+        if (currentStock < item.quantity) throw new Error(`Insufficient stock for product ${data.name || item.productId}`)
+        tx.update(productRef as any, { stock: currentStock - item.quantity })
+      })
+    }))
+
+    // Create reservation record
+    const reservationsRef = collection(db, 'stock_reservations')
+    const reservation = {
+      orderId,
+      items,
+      status: 'reserved',
+      createdAt: Timestamp.fromDate(new Date())
+    }
+    const resDoc = await addDoc(reservationsRef, reservation)
+    return resDoc.id
+  } catch (error) {
+    console.error('Error creating stock reservation:', error)
+    throw error
+  }
+}
+
+/**
+ * Finalize a reservation after successful payment. Marks reservation consumed.
+ */
+export async function finalizeReservation(reservationId: string): Promise<void> {
+  try {
+    const resRef = doc(db, 'stock_reservations', reservationId)
+    await updateDoc(resRef, { status: 'consumed', consumedAt: Timestamp.fromDate(new Date()) })
+  } catch (error) {
+    console.error('Error finalizing reservation:', error)
+    throw error
+  }
+}
+
+/**
+ * Restore stock for a reservation (on payment failure or cancellation).
+ */
+export async function restoreReservation(reservationId: string): Promise<void> {
+  try {
+    const resDocRef = doc(db, 'stock_reservations', reservationId)
+    const resSnap = await (resDocRef as any).get()
+    if (!resSnap.exists()) return
+    const reservation: any = resSnap.data()
+    if (!reservation.items || reservation.items.length === 0) return
+
+    // Add back stock using transactions
+    await Promise.all(reservation.items.map(async (item: any) => {
+      const productRef = doc(db, 'products', item.productId)
+      await runTransaction(db, async (tx) => {
+        const productSnap = await tx.get(productRef as any)
+        if (!productSnap.exists()) return
+        const data: any = productSnap.data()
+        const currentStock = data.stock || 0
+        tx.update(productRef as any, { stock: currentStock + item.quantity })
+      })
+    }))
+
+    // Mark reservation restored
+    await updateDoc(resDocRef, { status: 'restored', restoredAt: Timestamp.fromDate(new Date()) })
+  } catch (error) {
+    console.error('Error restoring reservation:', error)
     throw error
   }
 }

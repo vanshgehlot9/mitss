@@ -79,9 +79,19 @@ export default function AdminDashboard() {
       return
     }
 
-    // Allow any authenticated user to access admin dashboard
+    // If user data is loaded, ensure the user has an admin role
+    if (userData) {
+      const role = userData.role || ''
+      if (!(role === 'admin' || role === 'super_admin')) {
+        // Not an admin - redirect to home
+        router.push('/')
+        return
+      }
+    }
+
+    // Fetch dashboard data only for authenticated admin users
     fetchDashboardData()
-  }, [user, router, timeRange])
+  }, [user, userData, router, timeRange])
 
   const fetchDashboardData = async () => {
     setLoading(true)

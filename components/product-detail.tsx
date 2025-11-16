@@ -35,7 +35,22 @@ export default function ProductDetail({ product }: ProductDetailProps) {
     setIsWishlisted(wishlist.includes(product.id))
   }, [product.id])
 
+  const stock = (product as any).stock ?? null
+  const lowStockThreshold = (product as any).lowStockThreshold ?? 5
+  const isOutOfStock = stock !== null && stock <= 0
+  const isLowStock = stock !== null && stock > 0 && stock <= lowStockThreshold
+
   const handleAddToCart = () => {
+    if (isOutOfStock) {
+      toast.error('This product is out of stock')
+      return
+    }
+
+    if (stock !== null && quantity > stock) {
+      toast.error(`Only ${stock} units available`)
+      return
+    }
+
     for (let i = 0; i < quantity; i++) {
       addToCart({
         id: product.id,
@@ -50,6 +65,16 @@ export default function ProductDetail({ product }: ProductDetailProps) {
 
   const handleBuyNow = () => {
     // Add to cart first
+    if (isOutOfStock) {
+      toast.error('This product is out of stock')
+      return
+    }
+
+    if (stock !== null && quantity > stock) {
+      toast.error(`Only ${stock} units available`)
+      return
+    }
+
     for (let i = 0; i < quantity; i++) {
       addToCart({
         id: product.id,
@@ -277,11 +302,20 @@ export default function ProductDetail({ product }: ProductDetailProps) {
             )}
 
             {/* Stock Status */}
-            <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
-              <p className="text-green-600 font-semibold flex items-center gap-2">
-                <Check className="w-5 h-5" />
-                In Stock - Ready to Ship
-              </p>
+            <div className={`rounded-lg p-4 ${isOutOfStock ? 'bg-red-50 border border-red-200' : isLowStock ? 'bg-yellow-50 border border-yellow-200' : 'bg-green-50 border border-green-200'}`}>
+              {isOutOfStock ? (
+                <p className="text-red-600 font-semibold flex items-center gap-2">
+                  <Check className="w-5 h-5" />
+                  Out of Stock
+                </p>
+              ) : (
+                <>
+                  <p className={`${isLowStock ? 'text-yellow-800' : 'text-green-600'} font-semibold flex items-center gap-2`}>
+                    <Check className="w-5 h-5" />
+                    {isLowStock ? `Only ${stock} left — order soon` : 'In Stock - Ready to Ship'}
+                  </p>
+                </>
+              )}
             </div>
 
             {/* Features */}

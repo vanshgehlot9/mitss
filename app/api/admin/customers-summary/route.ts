@@ -1,48 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/firebase'
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore'
+import { database, ref, get } from '@/lib/firebase-realtime'
+import { requireAdmin } from '@/lib/ensure-admin'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export async function GET(request: NextRequest) {
   try {
-    if (!db) {
+    const authErr = await requireAdmin(request)
+    if (authErr) return authErr
+
+    if (!database) {
       return NextResponse.json(
         { success: false, error: 'Database not initialized' },
         { status: 500 }
       )
     }
 
-    // Fetch recent orders
-    const ordersQuery = query(
-      collection(db, 'orders'),
-      orderBy('createdAt', 'desc'),
-      limit(200)
-    )
+    // Fetch orders from Realtime Database
+    const ordersRef = ref(database, 'orders')
+    const snapshot = await get(ordersRef)
     
-    const snapshot = await getDocs(ordersQuery)
+    const orders: any[] = []
     
-    const orders = snapshot.docs.map(doc => {
-      const data = doc.data()
-      return {
-        userId: data.userId,
-        userName: data.userName,
-        userEmail: data.userEmail,
-        total: data.total || data.pricing?.total || 0,
-        createdAt: data.createdAt?.toDate?.() || new Date()
-      }
-    })
+    if (snapshot.exists()) {
+      const ordersData = snapshot.val()
+      
+      // Convert to array
+      Object.entries(ordersData).forEach(([id, data]: [string, any]) => {
+        orders.push({
+          userId: data.userId || data.userEmail,
+          userName: data.userName,
+          userEmail: data.userEmail,
+          total: data.total || data.pricing?.total || 0,
+          createdAt: new Date(data.createdAt)
+        })
+      })
+      
+      // Sort by date descending and limit to 200
+      orders.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      orders.splice(200)
+    }
     
     // Group by customer
     const customerMap = new Map()
     
     orders.forEach(order => {
-      if (!order.userId) return
+      const customerId = order.userId || order.userEmail
+      if (!customerId) return
       
-      if (!customerMap.has(order.userId)) {
-        customerMap.set(order.userId, {
-          id: order.userId,
+      if (!customerMap.has(customerId)) {
+        customerMap.set(customerId, {
+          id: customerId,
           name: order.userName || 'Unknown',
           email: order.userEmail || '',
           totalOrders: 0,
@@ -51,7 +60,7 @@ export async function GET(request: NextRequest) {
         })
       }
       
-      const customer = customerMap.get(order.userId)
+      const customer = customerMap.get(customerId)
       customer.totalOrders++
       customer.totalSpent += order.total || 0
       

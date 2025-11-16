@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { doc, updateDoc } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -176,17 +174,26 @@ export default function CustomersPage() {
 
   const loadCustomerOrders = async (customerId: string) => {
     try {
-      const ordersQuery = query(
-        collection(db, 'orders'),
-        where('userId', '==', customerId),
-        orderBy('createdAt', 'desc')
-      )
-      const snapshot = await getDocs(ordersQuery)
-      const orders = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate()
-      })) as Order[]
+      // Fetch orders from API
+      const response = await fetch('/api/admin/orders?limit=100')
+      const data = await response.json()
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to load orders')
+      }
+      
+      // Filter orders for this customer (by userId or email)
+      const customerEmail = customers.find(c => c.id === customerId)?.email
+      const orders = data.orders
+        .filter((order: any) => 
+          order.userId === customerId || 
+          order.userEmail === customerId ||
+          order.userEmail === customerEmail
+        )
+        .map((order: any) => ({
+          ...order,
+          createdAt: new Date(order.createdAt)
+        })) as Order[]
 
       setCustomerOrders(orders)
     } catch (error) {

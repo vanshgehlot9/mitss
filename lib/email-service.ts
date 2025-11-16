@@ -1,14 +1,13 @@
-// Email service using Nodemailer
-// Install: npm install nodemailer @types/nodemailer
+import { Resend } from 'resend'
 
-// Dynamic import to avoid build errors if not installed
-let nodemailer: any = null
-try {
-  nodemailer = require('nodemailer')
-} catch (e) {
-  console.warn('Nodemailer not installed. Email sending will be simulated.')
-}
+// Initialize Resend client
+const resend = new Resend(process.env.RESEND_API_KEY)
 
+// Email configuration
+const EMAIL_FROM = process.env.EMAIL_FROM || 'onboarding@resend.dev'
+const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || 'Mitss Furniture'
+
+// Email service types
 interface OrderEmailData {
   orderNumber: string
   customerName: string
@@ -23,114 +22,183 @@ interface OrderEmailData {
   shippingAddress: any
 }
 
-// Create reusable transporter
-const createTransporter = () => {
-  if (!nodemailer) return null
-  
-  // Use environment variables for configuration
-  if (process.env.EMAIL_SERVICE === 'gmail') {
-    return nodemailer.createTransporter({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD, // Use App Password for Gmail
-      },
-    })
-  } else if (process.env.SMTP_HOST) {
-    return nodemailer.createTransporter({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD,
-      },
-    })
-  }
-  
-  // Fallback to console logging in development
-  return null
-}
-
-export async function sendOrderConfirmationEmail(data: OrderEmailData) {
+export async function sendOrderConfirmation(
+  to: string,
+  orderDetails: {
+    orderNumber: string
+    customerName: string
+    email: string
+    phone: string
+    address: string
+    items: Array<{
+      name: string
+      quantity: number
+      price: number
+      image?: string
+    }>
+    subtotal: number
+    shipping: number
+    total: number
+    paymentMethod: string
+    orderDate: string
+  },
+  invoicePdfBuffer?: Buffer
+) {
   try {
-    const transporter = createTransporter()
+    const { getOrderConfirmationHTML, getOrderConfirmationText } = await import('./email-templates')
     
-    if (!transporter) {
-      // Development mode - just log
-      console.log('📧 Order Confirmation Email (Dev Mode)')
-      console.log('To:', data.customerEmail)
-      console.log('Order Number:', data.orderNumber)
-      console.log('Customer:', data.customerName)
-      console.log('Total:', `₹${data.pricing.total.toLocaleString()}`)
-      return { success: true, message: 'Email logged in development mode' }
+    const emailPayload: any = {
+      from: `${EMAIL_FROM_NAME} <${EMAIL_FROM}>`,
+      to: [to],
+      subject: `Order Confirmed! #${orderDetails.orderNumber} - Mitss Furniture`,
+      html: getOrderConfirmationHTML(orderDetails),
+      text: getOrderConfirmationText(orderDetails),
     }
 
-    const html = generateOrderConfirmationHTML(data)
+    // Add PDF attachment if provided
+    if (invoicePdfBuffer) {
+      emailPayload.attachments = [
+        {
+          filename: `invoice-${orderDetails.orderNumber}.pdf`,
+          content: invoicePdfBuffer,
+        },
+      ]
+    }
     
-    const mailOptions = {
-      from: `"Mitss - Modern Celluloid Industries" <${process.env.EMAIL_FROM || 'orders@mitss.store'}>`,
-      to: data.customerEmail,
-      subject: `Order Confirmation - ${data.orderNumber}`,
-      html,
+    const { data, error } = await resend.emails.send(emailPayload)
+
+    if (error) {
+      console.error('Email sending failed:', error)
+      return { success: false, error }
     }
 
-    await transporter.sendMail(mailOptions)
-    
-    console.log('✅ Order confirmation email sent to:', data.customerEmail)
-    return { success: true, message: 'Email sent successfully' }
+    console.log('Order confirmation email sent:', data)
+    return { success: true, data }
   } catch (error) {
-    console.error('Email service error:', error)
+    console.error('Email sending failed:', error)
     return { success: false, error }
   }
 }
 
-export async function sendShippingUpdateEmail(
-  customerEmail: string,
-  customerName: string,
-  orderNumber: string,
-  trackingNumber: string,
-  carrier: string
-) {
+export async function sendContactForm(data: {
+  name: string
+  email: string
+  subject?: string
+  message: string
+}) {
   try {
-    console.log('📦 Shipping Update Email')
-    console.log('To:', customerEmail)
-    console.log('Order:', orderNumber)
-    console.log('Tracking:', trackingNumber)
-    
-    return { success: true, message: 'Shipping email would be sent in production' }
+    const { data: emailData, error } = await resend.emails.send({
+      from: `${EMAIL_FROM_NAME} <${EMAIL_FROM}>`,
+      to: ['support@mitss.store'], // Replace with your support email
+      replyTo: data.email,
+      subject: `New Contact: ${data.subject || 'General Inquiry'} from ${data.name}`,
+      html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #1A2642; color: white; padding: 20px; }
+    .content { padding: 20px; background: #f9fafb; border-radius: 8px; margin: 20px 0; }
+    .field { margin-bottom: 15px; }
+    .label { font-weight: bold; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>New Contact Form Submission</h2>
+    </div>
+    <div class="content">
+      <div class="field">
+        <div class="label">Name:</div>
+        <div>${data.name}</div>
+      </div>
+      <div class="field">
+        <div class="label">Email:</div>
+        <div><a href="mailto:${data.email}">${data.email}</a></div>
+      </div>
+      ${data.subject ? `
+      <div class="field">
+        <div class="label">Subject:</div>
+        <div>${data.subject}</div>
+      </div>
+      ` : ''}
+      <div class="field">
+        <div class="label">Message:</div>
+        <div style="white-space: pre-wrap;">${data.message}</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+      `,
+      text: `New Contact Form Submission\n\nName: ${data.name}\nEmail: ${data.email}\n${data.subject ? `Subject: ${data.subject}\n` : ''}Message:\n${data.message}`,
+    })
+
+    if (error) {
+      console.error('Email sending failed:', error)
+      return { success: false, error }
+    }
+
+    return { success: true, data: emailData }
   } catch (error) {
-    console.error('Shipping email error:', error)
+    console.error('Email sending failed:', error)
     return { success: false, error }
   }
 }
 
 // Generic email sending function
-export async function sendEmail(options: {
-  to: string
-  subject: string
-  html: string
-  from?: string
-}): Promise<{ success: boolean; error?: any }> {
-  const transporter = createTransporter()
-  
-  if (!transporter) {
-    console.log(`[SIMULATED] Email to ${options.to}: ${options.subject}`)
-    return { success: true }
-  }
-
+export async function sendPasswordReset(email: string, resetLink: string) {
   try {
-    const info = await transporter.sendMail({
-      from: options.from || process.env.EMAIL_FROM || '"MITSS" <noreply@mitss.store>',
-      to: options.to,
-      subject: options.subject,
-      html: options.html,
+    const { data, error } = await resend.emails.send({
+      from: `${EMAIL_FROM_NAME} <${EMAIL_FROM}>`,
+      to: [email],
+      subject: 'Reset Your Password - Mitss Furniture',
+      html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #1A2642 0%, #2D3E5F 100%); color: white; padding: 30px; text-align: center; }
+    .content { padding: 30px; background: #fff; }
+    .button { display: inline-block; background: #D4AF37; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+    .footer { text-align: center; color: #666; font-size: 12px; margin-top: 30px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>MITSS</h1>
+    </div>
+    <div class="content">
+      <h2>Reset Your Password</h2>
+      <p>We received a request to reset your password. Click the button below to create a new password:</p>
+      <a href="${resetLink}" class="button">Reset Password</a>
+      <p>If you didn't request this, you can safely ignore this email.</p>
+      <p>This link will expire in 1 hour.</p>
+    </div>
+    <div class="footer">
+      <p>© ${new Date().getFullYear()} Mitss Furniture. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+      `,
+      text: `Reset Your Password\n\nWe received a request to reset your password.\n\nClick here: ${resetLink}\n\nIf you didn't request this, you can safely ignore this email.\n\nThis link will expire in 1 hour.`,
     })
 
-    console.log('Email sent:', info.messageId)
-    return { success: true }
+    if (error) {
+      console.error('Email sending failed:', error)
+      return { success: false, error }
+    }
+
+    return { success: true, data }
   } catch (error) {
-    console.error('Email error:', error)
+    console.error('Email sending failed:', error)
     return { success: false, error }
   }
 }

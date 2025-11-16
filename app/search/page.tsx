@@ -17,6 +17,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { useCart } from "@/lib/cart-context"
 import { useToast } from "@/hooks/use-toast"
+import AdvancedFiltersPanel from "@/components/filters/advanced-filters-panel"
 
 function SearchContent() {
   const searchParams = useSearchParams()
@@ -28,6 +29,7 @@ function SearchContent() {
   const [selectedColors, setSelectedColors] = useState<string[]>([])
   const [sortBy, setSortBy] = useState("popular")
   const [showFilters, setShowFilters] = useState(true)
+  const [filters, setFilters] = useState<any>({})
 
   const { addToCart } = useCart()
   const { toast } = useToast()
@@ -35,6 +37,14 @@ function SearchContent() {
   // Get unique categories and colors
   const categories = Array.from(new Set(products.map(p => p.category)))
   const allColors = Array.from(new Set(products.flatMap(p => p.color || [])))
+
+  // Handle filter changes
+  const handleFilterChange = (newFilters: any) => {
+    setFilters(newFilters)
+    setPriceRange(newFilters.priceRange)
+    setSelectedCategories(newFilters.categories)
+    setSortBy(newFilters.sortBy)
+  }
 
   // Filter and sort products
   const filteredProducts = products.filter(product => {
@@ -145,95 +155,15 @@ function SearchContent() {
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Filters Sidebar */}
-          {showFilters && (
-            <div className="lg:col-span-1 space-y-6">
-              <Card className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-lg">Filters</h3>
-                  {activeFiltersCount > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={clearFilters}
-                      className="text-[#D4AF37]"
-                    >
-                      Clear All
-                    </Button>
-                  )}
-                </div>
-
-                {/* Price Range */}
-                <div className="mb-6">
-                  <label className="block text-sm font-semibold mb-3">
-                    Price Range
-                  </label>
-                  <Slider
-                    min={0}
-                    max={100000}
-                    step={1000}
-                    value={priceRange}
-                    onValueChange={setPriceRange}
-                    className="mb-3"
-                  />
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>₹{priceRange[0].toLocaleString('en-IN')}</span>
-                    <span>₹{priceRange[1].toLocaleString('en-IN')}</span>
-                  </div>
-                </div>
-
-                {/* Categories */}
-                <div className="mb-6">
-                  <label className="block text-sm font-semibold mb-3">
-                    Category
-                  </label>
-                  <div className="space-y-2">
-                    {categories.map((category) => (
-                      <div key={category} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`cat-${category}`}
-                          checked={selectedCategories.includes(category)}
-                          onCheckedChange={() => handleCategoryToggle(category)}
-                        />
-                        <label
-                          htmlFor={`cat-${category}`}
-                          className="text-sm cursor-pointer"
-                        >
-                          {category}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Colors */}
-                <div className="mb-6">
-                  <label className="block text-sm font-semibold mb-3">
-                    Color
-                  </label>
-                  <div className="space-y-2">
-                    {allColors.map((color) => (
-                      <div key={color} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`color-${color}`}
-                          checked={selectedColors.includes(color)}
-                          onCheckedChange={() => handleColorToggle(color)}
-                        />
-                        <label
-                          htmlFor={`color-${color}`}
-                          className="text-sm cursor-pointer"
-                        >
-                          {color}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </Card>
-            </div>
-          )}
+          <div className="lg:col-span-1">
+            <AdvancedFiltersPanel 
+              onFilterChange={handleFilterChange}
+              showMobileToggle={true}
+            />
+          </div>
 
           {/* Products Grid */}
-          <div className={showFilters ? "lg:col-span-3" : "lg:col-span-4"}>
+          <div className="lg:col-span-3">
             {/* Sort and Results Count */}
             <div className="flex items-center justify-between mb-6">
               <p className="text-muted-foreground">

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/firebase'
 import { doc, getDoc } from 'firebase/firestore'
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 // GET - Generate invoice for an order
 export async function GET(request: NextRequest) {
@@ -30,7 +32,90 @@ export async function GET(request: NextRequest) {
     // Generate invoice HTML
     const invoiceHTML = generateInvoiceHTML(order)
 
-    // Return HTML for now (can be converted to PDF using libraries like puppeteer or pdfkit)
+    const format = searchParams.get('format') || searchParams.get('type') || ''
+
+    // If PDF requested, generate PDF using jsPDF
+    if (format.toLowerCase() === 'pdf' || format.toLowerCase() === 'download') {
+      try {
+        const doc = new jsPDF({ unit: 'pt', format: 'a4' })
+
+        // Header
+        doc.setFontSize(18)
+        doc.text('TAX INVOICE', 40, 50)
+        doc.setFontSize(10)
+        doc.text('Mitss - Modern Celluloid Industries', 40, 68)
+
+        // Invoice meta (right side)
+        doc.setFontSize(10)
+        doc.text(`Invoice No: ${order.orderNumber}`, 400, 50)
+        const date = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt)
+        doc.text(`Date: ${date.toLocaleDateString('en-IN')}`, 400, 65)
+        doc.text(`Payment Status: ${order.paymentStatus || 'Paid'}`, 400, 80)
+
+        // From and Bill To
+        doc.setFontSize(11)
+        doc.text('From:', 40, 110)
+        doc.setFontSize(10)
+        doc.text('Modern Celluloid Industries', 40, 125)
+        doc.text('Siwanchi Gate Rd, Pratap Nagar, Jodhpur, Rajasthan 342001', 40, 140)
+        doc.text('Phone: +91 99500 36077', 40, 155)
+
+        doc.setFontSize(11)
+        doc.text('Bill To:', 300, 110)
+        doc.setFontSize(10)
+        const shipping = order.shippingAddress || {}
+        doc.text(`${shipping.firstName || ''} ${shipping.lastName || ''}`, 300, 125)
+        doc.text(`${shipping.address || ''}`, 300, 140)
+        doc.text(`${shipping.city || ''}, ${shipping.state || ''} - ${shipping.pincode || ''}`, 300, 155)
+        doc.text(`Phone: ${shipping.phone || ''}`, 300, 170)
+
+        // Table of items
+        const head = [['#', 'Item Description', 'Qty', 'Rate', 'Amount']]
+        const body = (order.items || []).map((item: any, idx: number) => [
+          String(idx + 1),
+          `${item.name}${item.category ? ' - ' + item.category : ''}`,
+          String(item.quantity),
+          `₹${Number(item.price).toLocaleString()}`,
+          `₹${(item.price * item.quantity).toLocaleString()}`,
+        ])
+
+        // Use autoTable to render items
+        // @ts-ignore
+        autoTable(doc, {
+          head,
+          body,
+          startY: 190,
+          styles: { fontSize: 10 },
+          headStyles: { fillColor: [26, 38, 66] },
+          theme: 'striped'
+        })
+
+        const finalY = (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY + 10 : 350
+
+        // Totals
+        doc.setFontSize(11)
+        doc.text(`Subtotal: ₹${order.pricing?.subtotal?.toLocaleString() || '0'}`, 380, finalY + 20)
+        doc.text(`Shipping: ₹${order.pricing?.shipping?.toLocaleString() || '0'}`, 380, finalY + 35)
+        doc.text(`GST: ₹${order.pricing?.gst?.toLocaleString() || '0'}`, 380, finalY + 50)
+        doc.setFontSize(12)
+        doc.text(`Grand Total: ₹${order.pricing?.total?.toLocaleString() || '0'}`, 380, finalY + 75)
+
+        const arrayBuffer = doc.output('arraybuffer')
+        const buffer = Buffer.from(arrayBuffer)
+
+        return new NextResponse(buffer, {
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename=invoice-${order.orderNumber || order.id}.pdf`,
+          },
+        })
+      } catch (err: any) {
+        console.error('PDF generation error:', err)
+        // Fall back to HTML
+      }
+    }
+
+    // Default: return HTML
     return new NextResponse(invoiceHTML, {
       headers: {
         'Content-Type': 'text/html',
