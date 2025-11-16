@@ -13,7 +13,6 @@ export const initialProducts = [
     inStock: true,
     featured: true,
     isExclusive: false,  // Regular product with Buy Now
-    color: ["Natural Wood", "Black", "White"],
     features: [
       "Elegant cross-back design",
       "Natural wooden seat",
@@ -87,7 +86,6 @@ export const initialProducts = [
     inStock: true,
     featured: true,
     isExclusive: false,  // Regular product with Buy Now
-    color: ["Black", "Grey", "Brown"],
     features: [
       "Classic industrial design",
       "Vintage finish",
@@ -117,7 +115,6 @@ export const initialProducts = [
     inStock: true,
     featured: true,
     isExclusive: false,  // Regular product with Buy Now
-    color: ["Natural Wood", "Walnut", "Dark Oak"],
     features: [
       "Premium quality materials",
       "Exquisite craftsmanship",
@@ -147,7 +144,6 @@ export const initialProducts = [
     inStock: true,
     featured: true,
     isExclusive: false,  // Regular product with Buy Now
-    color: ["Grey", "Beige", "Navy Blue"],
     features: [
       "Comfortable cushioning",
       "Sleek modern design",

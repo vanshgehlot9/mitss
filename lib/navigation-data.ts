@@ -2,6 +2,7 @@ export interface SubCategory {
   name: string
   href: string
   badge?: string
+  available?: boolean // true if products exist, false = redirect to coming soon
 }
 
 export interface CategorySection {
@@ -13,7 +14,17 @@ export interface MegaMenuCategory {
   name: string
   href: string
   sections: CategorySection[]
+  available?: boolean // Main category availability
 }
+
+// Available product categories (based on current inventory)
+export const availableCategories = [
+  "Dining Room",
+  "Seating", 
+  "Living Room",
+  "Chairs",
+  "Tables"
+]
 
 export const megaMenuData: MegaMenuCategory[] = [
   {

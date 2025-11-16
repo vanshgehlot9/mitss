@@ -45,25 +45,41 @@ export default function MegaMenu({ category, isOpen, onClose }: MegaMenuProps) {
                         {section.title}
                       </h3>
                       <ul className="space-y-2">
-                        {section.items.map((item, itemIdx) => (
-                          <li key={itemIdx}>
-                            <Link
-                              href={item.href}
-                              className="group flex items-center justify-between text-sm text-[#1A2642]/70 hover:text-[#D4AF37] transition-colors"
-                              onClick={onClose}
-                            >
-                              <span className="group-hover:translate-x-1 transition-transform inline-flex items-center gap-2">
-                                {item.name}
-                                {item.badge && (
-                                  <Badge className="bg-red-500 text-white text-[10px] px-1.5 py-0">
-                                    {item.badge}
-                                  </Badge>
-                                )}
-                              </span>
-                              <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </Link>
-                          </li>
-                        ))}
+                        {section.items.map((item, itemIdx) => {
+                          // Check if category has products by checking href
+                          const hasProducts = item.href.includes("Dining") || 
+                                            item.href.includes("Seating") || 
+                                            item.href.includes("Living Room") ||
+                                            item.href.includes("Chairs") ||
+                                            item.href.includes("Tables")
+                          
+                          const finalHref = hasProducts ? item.href : "/coming-soon"
+                          
+                          return (
+                            <li key={itemIdx}>
+                              <Link
+                                href={finalHref}
+                                className="group flex items-center justify-between text-sm text-[#1A2642]/70 hover:text-[#D4AF37] transition-colors"
+                                onClick={onClose}
+                              >
+                                <span className="group-hover:translate-x-1 transition-transform inline-flex items-center gap-2">
+                                  {item.name}
+                                  {item.badge && (
+                                    <Badge className="bg-red-500 text-white text-[10px] px-1.5 py-0">
+                                      {item.badge}
+                                    </Badge>
+                                  )}
+                                  {!hasProducts && (
+                                    <Badge className="bg-gray-500 text-white text-[10px] px-1.5 py-0">
+                                      Soon
+                                    </Badge>
+                                  )}
+                                </span>
+                                <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </Link>
+                            </li>
+                          )
+                        })}
                       </ul>
                     </div>
                   ))}

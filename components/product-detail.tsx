@@ -20,7 +20,6 @@ interface ProductDetailProps {
 
 export default function ProductDetail({ product }: ProductDetailProps) {
   const { addToCart } = useCart()
-  const [selectedColor, setSelectedColor] = useState(product.color[0])
   const [quantity, setQuantity] = useState(1)
   const [isWishlisted, setIsWishlisted] = useState(false)
 
@@ -200,28 +199,6 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                 </>
               )}
             </div>
-
-            {/* Color Selection - Only for non-exclusive products */}
-            {!(product as any).isExclusive && (
-              <div>
-                <p className="font-semibold mb-3">Color: <span className="text-[#D4AF37]">{selectedColor}</span></p>
-                <div className="flex gap-3">
-                  {product.color.map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => setSelectedColor(color)}
-                      className={`px-4 py-2 rounded-lg border-2 transition-all ${
-                        selectedColor === color
-                          ? 'border-[#D4AF37] bg-[#D4AF37]/10'
-                          : 'border-border hover:border-[#D4AF37]/50'
-                      }`}
-                    >
-                      {color}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Quantity - Only for non-exclusive products */}
             {!(product as any).isExclusive && (

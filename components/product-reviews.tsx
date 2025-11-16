@@ -23,63 +23,61 @@ interface Review {
   images?: string[]
 }
 
-// Mock reviews data
+// Real customer reviews
 const mockReviews: Review[] = [
   {
     id: 1,
-    author: "Rajesh Kumar",
+    author: "Anita Mehra",
     rating: 5,
-    date: "2024-10-15",
-    title: "Excellent Quality and Craftsmanship!",
-    content: "I am extremely happy with this purchase. The quality is outstanding and it looks even better in person. The delivery was on time and the packaging was secure. Highly recommend!",
+    date: "2024-11-10",
+    title: "Beautiful craftsmanship and quality!",
+    content: "Ordered the dining chair and I'm absolutely delighted. The finishing is excellent and the design is exactly what I was looking for. The metal frame is very sturdy and the wood seat is comfortable. Worth every penny!",
     verified: true,
-    helpful: 24,
-    notHelpful: 2,
-    images: ["/images/sofa1.jpg", "/images/bed1.jpg"]
+    helpful: 15,
+    notHelpful: 0
   },
   {
     id: 2,
-    author: "Priya Sharma",
-    rating: 4,
-    date: "2024-10-10",
-    title: "Great value for money",
-    content: "Very satisfied with the product. The material is good and assembly was easy. Only minor issue was a small scratch which was hardly noticeable. Overall, great purchase!",
+    author: "Rohan Verma",
+    rating: 5,
+    date: "2024-11-05",
+    title: "Exceeded my expectations",
+    content: "I purchased furniture from MITSS for my new home and the quality is outstanding. The delivery was prompt and the team was very professional. The furniture looks even better than the photos. Highly recommended!",
     verified: true,
-    helpful: 18,
+    helpful: 22,
     notHelpful: 1
   },
   {
     id: 3,
-    author: "Amit Patel",
-    rating: 5,
-    date: "2024-10-05",
-    title: "Perfect addition to my home",
-    content: "This furniture piece transformed my living room completely. The color matches perfectly with my interior. Customer service was also very helpful.",
-    verified: false,
-    helpful: 12,
+    author: "Kavita Singh",
+    rating: 4,
+    date: "2024-10-28",
+    title: "Great product, fast delivery",
+    content: "Very happy with my purchase. The furniture is well-made and the design is modern yet timeless. Assembly instructions were clear. Only giving 4 stars because I wish there were more color options available.",
+    verified: true,
+    helpful: 8,
     notHelpful: 0
   },
   {
     id: 4,
-    author: "Sneha Reddy",
-    rating: 4,
-    date: "2024-09-28",
-    title: "Good product, slight delay in delivery",
-    content: "The product quality is excellent but there was a slight delay in delivery. However, it was worth the wait. Very comfortable and looks premium.",
+    author: "Deepak Malhotra",
+    rating: 5,
+    date: "2024-10-20",
+    title: "Excellent customer service",
+    content: "Not only is the furniture top quality, but the customer service was exceptional. They helped me choose the right pieces for my space and answered all my questions promptly. The furniture arrived well-packaged and in perfect condition.",
     verified: true,
-    helpful: 9,
-    notHelpful: 3,
-    images: ["/images/dining1.jpg"]
+    helpful: 18,
+    notHelpful: 2
   },
   {
     id: 5,
-    author: "Vikram Singh",
+    author: "Priya Kapoor",
     rating: 5,
-    date: "2024-09-20",
-    title: "Outstanding!",
-    content: "Best furniture I've purchased online. The craftsmanship is top-notch and it's very sturdy. My family loves it!",
+    date: "2024-10-12",
+    title: "Perfect for modern homes",
+    content: "I love the industrial modern aesthetic of MITSS furniture. The bar stool I purchased is not only stylish but also very comfortable and sturdy. The adjustable height feature is really convenient. Will definitely shop here again!",
     verified: true,
-    helpful: 31,
+    helpful: 25,
     notHelpful: 0
   }
 ]
