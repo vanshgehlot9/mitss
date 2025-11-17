@@ -31,10 +31,11 @@ if (shouldInitialize) {
   } catch (error) {
     console.error('Firebase initialization failed:', error)
   }
+} else {
+  console.warn('Firebase is not configured. Some features will be disabled.')
 }
 
-if (!database) {
-  throw new Error('Firebase database is not initialized. Check your configuration.')
-}
+// Helper to check if Firebase is configured at runtime
+export const isFirebaseConfigured = () => !!database
 
 export { app, auth, database, storage, ref, push, set, get, update, query, orderByChild, limitToLast }
