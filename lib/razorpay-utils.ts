@@ -154,10 +154,14 @@ export function verifyRazorpaySignature(params: VerifyPaymentRequest): boolean {
 
     // Create the expected signature
     const text = `${razorpay_order_id}|${razorpay_payment_id}`;
-    const expectedSignature = crypto
-      .createHmac('sha256', razorpayConfig.keySecret)
-      .update(text)
-      .digest('hex');
+    // Read the secret at call-time to avoid stale or missing env values
+    const { keySecret } = getRazorpayConfig();
+    if (!keySecret) {
+      console.error('Razorpay key secret missing when verifying signature');
+      return false;
+    }
+
+    const expectedSignature = crypto.createHmac('sha256', keySecret).update(text).digest('hex');
 
     // Compare signatures
     return expectedSignature === razorpay_signature;
@@ -177,8 +181,9 @@ export function verifyWebhookSignature(
   secret?: string
 ): boolean {
   try {
-    const webhookSecret = secret || razorpayConfig.webhookSecret;
-    
+    // Prefer explicit secret param, otherwise read current env value
+    const webhookSecret = secret || getRazorpayConfig().webhookSecret;
+
     if (!webhookSecret || webhookSecret === 'your_webhook_secret_here') {
       console.warn('Webhook secret not configured properly');
       return false;
