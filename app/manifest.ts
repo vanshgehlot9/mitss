@@ -11,9 +11,25 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: '#D4AF37',
     icons: [
       {
-        src: '/mitsslogo.png',
+        src: '/favicon.ico',
         sizes: 'any',
+        type: 'image/x-icon',
+      },
+      {
+        src: '/mitsslogo.png',
+        sizes: '192x192',
         type: 'image/png',
+      },
+      {
+        src: '/apple-touch-icon.png',
+        sizes: '180x180',
+        type: 'image/png',
+      },
+      {
+        src: '/mitss-logo.svg',
+        sizes: '512x512',
+        type: 'image/svg+xml',
+        purpose: 'any maskable',
       },
     ],
   }

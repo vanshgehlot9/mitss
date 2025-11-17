@@ -57,9 +57,20 @@ export const metadata: Metadata = {
     telephone: false,
   },
   icons: {
-    icon: '/mitsslogo.png',
-    shortcut: '/mitsslogo.png',
-    apple: '/mitsslogo.png',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/mitsslogo.png', type: 'image/png', sizes: '192x192' },
+      { url: '/apple-touch-icon.png', type: 'image/png', sizes: '180x180' },
+    ],
+    shortcut: [{ url: '/favicon.ico' }],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
+    other: [
+      {
+        rel: 'mask-icon',
+        url: '/mitss-logo.svg',
+        color: '#D4AF37',
+      },
+    ],
   },
   robots: {
     index: true,
