@@ -1,11 +1,14 @@
 import { Resend } from 'resend'
 
-// Initialize Resend client
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Initialize Resend client with fallback to prevent build errors
+const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder_key')
 
 // Email configuration
 const EMAIL_FROM = process.env.EMAIL_FROM || 'onboarding@resend.dev'
 const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || 'Mitss Furniture'
+
+// Check if email service is properly configured
+const isEmailConfigured = !!process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== 're_placeholder_key'
 
 // Email service types
 interface OrderEmailData {
@@ -45,6 +48,12 @@ export async function sendOrderConfirmation(
   invoicePdfBuffer?: Buffer
 ) {
   try {
+    // Skip email sending if not configured (e.g., during build)
+    if (!isEmailConfigured) {
+      console.warn('Email service not configured. Skipping email send.')
+      return { success: false, error: 'Email service not configured' }
+    }
+
     const { getOrderConfirmationHTML, getOrderConfirmationText } = await import('./email-templates')
     
     const emailPayload: any = {
@@ -87,6 +96,11 @@ export async function sendContactForm(data: {
   message: string
 }) {
   try {
+    if (!isEmailConfigured) {
+      console.warn('Email service not configured. Skipping contact form email.')
+      return { success: false, error: 'Email service not configured' }
+    }
+
     const { data: emailData, error } = await resend.emails.send({
       from: `${EMAIL_FROM_NAME} <${EMAIL_FROM}>`,
       to: ['support@mitss.store'], // Replace with your support email
@@ -161,6 +175,11 @@ export async function sendEmail(params: {
   attachments?: Array<{ filename: string; content: Buffer | string }>
 }) {
   try {
+    if (!isEmailConfigured) {
+      console.warn('Email service not configured. Skipping email send.')
+      return { success: false, error: 'Email service not configured' }
+    }
+
     const { to, subject, html, text, attachments } = params
     const emailPayload: any = {
       from: `${EMAIL_FROM_NAME} <${EMAIL_FROM}>`,
@@ -186,6 +205,11 @@ export async function sendEmail(params: {
 // Generic email sending function
 export async function sendPasswordReset(email: string, resetLink: string) {
   try {
+    if (!isEmailConfigured) {
+      console.warn('Email service not configured. Skipping password reset email.')
+      return { success: false, error: 'Email service not configured' }
+    }
+
     const { data, error } = await resend.emails.send({
       from: `${EMAIL_FROM_NAME} <${EMAIL_FROM}>`,
       to: [email],
