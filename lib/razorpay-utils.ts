@@ -17,11 +17,23 @@ import {
 /**
  * Razorpay Configuration
  * Using function to ensure fresh environment variable reads
+ * Enhanced to check multiple possible environment variable names
  */
 export function getRazorpayConfig() {
+  // Check multiple possible environment variable names (common mistakes)
+  const publicKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+  const keyId = process.env.RAZORPAY_KEY_ID || 
+                process.env.RAZORPAY_KEY || 
+                process.env.RAZORPAY_KEYID ||
+                (publicKeyId && publicKeyId.startsWith('rzp_') ? publicKeyId : null) || '';
+  
+  const keySecret = process.env.RAZORPAY_KEY_SECRET || 
+                    process.env.RAZORPAY_SECRET ||
+                    process.env.RAZORPAY_KEY_SECRET_KEY || '';
+  
   return {
-    keyId: process.env.RAZORPAY_KEY_ID || '',
-    keySecret: process.env.RAZORPAY_KEY_SECRET || '',
+    keyId,
+    keySecret,
     webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || '',
   };
 }
@@ -31,30 +43,61 @@ export const razorpayConfig = getRazorpayConfig();
 
 /**
  * Validate Razorpay Configuration
+ * Enhanced validation with better Vercel support
  */
 export function validateRazorpayConfig(): boolean {
-  const keyId = process.env.RAZORPAY_KEY_ID;
-  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  // Check multiple possible environment variable names (common mistakes)
+  const publicKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+  const keyId = process.env.RAZORPAY_KEY_ID || 
+                process.env.RAZORPAY_KEY || 
+                process.env.RAZORPAY_KEYID ||
+                (publicKeyId && publicKeyId.startsWith('rzp_') ? publicKeyId : null);
   
+  const keySecret = process.env.RAZORPAY_KEY_SECRET || 
+                    process.env.RAZORPAY_SECRET ||
+                    process.env.RAZORPAY_KEY_SECRET_KEY;
+  
+  // Log detailed environment check for debugging
   console.log('Validating Razorpay Config:', {
     keyIdExists: !!keyId,
     keySecretExists: !!keySecret,
     keyIdLength: keyId?.length || 0,
     keySecretLength: keySecret?.length || 0,
+    keyIdPrefix: keyId?.substring(0, 4) || 'N/A',
+    nodeEnv: process.env.NODE_ENV,
+    vercelEnv: process.env.VERCEL_ENV,
+    // Check all possible env var locations
+    envVars: {
+      RAZORPAY_KEY_ID: !!process.env.RAZORPAY_KEY_ID,
+      RAZORPAY_KEY: !!process.env.RAZORPAY_KEY,
+      RAZORPAY_KEYID: !!process.env.RAZORPAY_KEYID,
+      RAZORPAY_KEY_SECRET: !!process.env.RAZORPAY_KEY_SECRET,
+      RAZORPAY_SECRET: !!process.env.RAZORPAY_SECRET,
+      NEXT_PUBLIC_RAZORPAY_KEY_ID: !!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+    }
   });
   
   if (!keyId || !keySecret) {
     console.error('Razorpay configuration validation failed');
     console.error('Missing:', {
-      keyId: !keyId ? 'RAZORPAY_KEY_ID not found' : 'OK',
-      keySecret: !keySecret ? 'RAZORPAY_KEY_SECRET not found' : 'OK',
+      keyId: !keyId ? 'RAZORPAY_KEY_ID not found (checked: RAZORPAY_KEY_ID, RAZORPAY_KEY, RAZORPAY_KEYID)' : 'OK',
+      keySecret: !keySecret ? 'RAZORPAY_KEY_SECRET not found (checked: RAZORPAY_KEY_SECRET, RAZORPAY_SECRET)' : 'OK',
     });
+    console.error('⚠️  IMPORTANT: After adding environment variables in Vercel dashboard:');
+    console.error('   1. Ensure variables are set for the correct environment (Production/Preview/Development)');
+    console.error('   2. Redeploy your application for changes to take effect');
+    console.error('   3. Check Vercel logs to verify environment variables are loaded at runtime');
     return false;
   }
   
   if (keyId.length === 0 || keySecret.length === 0) {
     console.error('Razorpay credentials are empty strings');
     return false;
+  }
+  
+  // Validate key format (Razorpay key IDs typically start with 'rzp_')
+  if (keyId && !keyId.startsWith('rzp_') && keyId.length < 10) {
+    console.warn('Warning: RAZORPAY_KEY_ID format may be incorrect (expected format: rzp_...)');
   }
   
   return true;

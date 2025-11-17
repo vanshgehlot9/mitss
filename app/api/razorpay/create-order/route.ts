@@ -33,12 +33,31 @@ export async function POST(request: NextRequest) {
     // Validate Razorpay configuration
     if (!validateRazorpayConfig()) {
       console.error('Razorpay configuration validation failed');
-      console.error('Please ensure RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are set in Vercel environment variables');
+      console.error('Environment variables check:');
+      console.error('  RAZORPAY_KEY_ID:', process.env.RAZORPAY_KEY_ID ? 'SET' : 'NOT SET');
+      console.error('  RAZORPAY_KEY_SECRET:', process.env.RAZORPAY_KEY_SECRET ? 'SET' : 'NOT SET');
+      console.error('');
+      console.error('📋 TROUBLESHOOTING STEPS:');
+      console.error('  1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables');
+      console.error('  2. Verify these variables are set:');
+      console.error('     - RAZORPAY_KEY_ID (starts with "rzp_")');
+      console.error('     - RAZORPAY_KEY_SECRET (your secret key)');
+      console.error('  3. Ensure they are enabled for the correct environment (Production/Preview)');
+      console.error('  4. REDEPLOY your application (Environment variables only apply to new deployments)');
+      console.error('  5. Check Vercel Function Logs to see if variables are loaded');
+      
       return NextResponse.json(
         {
           success: false,
           message: 'Payment gateway not configured. Environment variables missing on server.',
           error: 'RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET not found in environment',
+          troubleshooting: {
+            step1: 'Verify environment variables in Vercel Dashboard → Settings → Environment Variables',
+            step2: 'Ensure variables are set: RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET',
+            step3: 'Important: REDEPLOY your application after adding/changing environment variables',
+            step4: 'Environment variables only apply to new deployments, not existing ones',
+            step5: 'Check Vercel Function Logs to verify variables are loaded at runtime',
+          }
         },
         { status: 500 }
       );
