@@ -17,6 +17,21 @@ export default function PaymentPage() {
   const { clearCart } = useCart()
   const [checkoutData, setCheckoutData] = useState<any>(null)
   const [processing, setProcessing] = useState(false)
+  const [configError, setConfigError] = useState<string | null>(null)
+
+  const checkRazorpayConfig = async () => {
+    try {
+      const response = await fetch('/api/razorpay/check-env')
+      const data = await response.json()
+      
+      if (!data.configValid) {
+        setConfigError('Payment gateway not configured. Environment variables missing on server.')
+      }
+    } catch (error) {
+      console.error('Failed to check Razorpay config:', error)
+      // Don't show error if check fails, just log it
+    }
+  }
 
   useEffect(() => {
     const data = localStorage.getItem("checkoutData")
@@ -34,6 +49,10 @@ export default function PaymentPage() {
       router.push("/account?redirect=/payment")
       return
     }
+
+    // Check Razorpay configuration on page load
+    checkRazorpayConfig()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, user])
 
   const loadRazorpayScript = (): Promise<boolean> => {
@@ -330,6 +349,31 @@ export default function PaymentPage() {
       
       <div className="pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 md:pb-20">
         <div className="container mx-auto px-3 sm:px-4 max-w-5xl">
+          {/* Configuration Error Banner */}
+          {configError && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg"
+            >
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3 flex-1">
+                  <p className="text-sm font-medium text-red-800">
+                    {configError}
+                  </p>
+                  <p className="mt-2 text-sm text-red-700">
+                    ⚠️ <strong>Important:</strong> After adding environment variables in Vercel Dashboard, you <strong>MUST redeploy</strong> your application for them to take effect. Environment variables only apply to new deployments.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
