@@ -17,7 +17,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { useCart } from "@/lib/cart-context"
 import { useToast } from "@/hooks/use-toast"
-import AdvancedFiltersPanel from "@/components/filters/advanced-filters-panel"
+import AdvancedFiltersPanel from "@/components/filters/advanced-product-filters"
 
 function SearchContent() {
   const searchParams = useSearchParams()

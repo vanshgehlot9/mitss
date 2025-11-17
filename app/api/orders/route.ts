@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { database, ref, get, push, set, update, query, orderByChild, equalTo } from '@/lib/firebase-realtime'
+import { database, ref, get, push, set, update, query, orderByChild } from '@/lib/firebase-realtime'
+import { equalTo } from 'firebase/database'
 import { runTransaction } from 'firebase/database'
 import { checkRateLimit, getClientIp, getRateLimitHeaders, rateLimitConfigs } from '@/lib/rate-limit'
 
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch specific order
     if (orderId) {
-      const orderRef = ref(database, `orders/${orderId}`)
+      const orderRef = ref(database!, `orders/${orderId}`)
       const snapshot = await get(orderRef)
       
       if (!snapshot.exists()) {
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch orders by user
     if (userId) {
-      const ordersRef = ref(database, 'orders')
+      const ordersRef = ref(database!, 'orders')
       const userOrdersQuery = query(ordersRef, orderByChild('userId'), equalTo(userId))
       const snapshot = await get(userOrdersQuery)
       
@@ -63,7 +64,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch all orders (admin only)
-    const ordersRef = ref(database, 'orders')
+    const ordersRef = ref(database!, 'orders')
     const snapshot = await get(ordersRef)
     
     if (!snapshot.exists()) {
@@ -209,7 +210,7 @@ export async function POST(request: NextRequest) {
       for (const it of items) {
         const productId = it.productId || it._id || it.id
         const qty = parseInt(it.quantity || it.qty || 1)
-        const productRef = ref(database, `products/${productId}`)
+        const productRef = ref(database!, `products/${productId}`)
 
         const txResult = await runTransaction(productRef, (current) => {
           if (!current) return // abort if product missing
@@ -229,7 +230,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Create reservation record
-      const reservationsRef = ref(database, 'stock_reservations')
+      const reservationsRef = ref(database!, 'stock_reservations')
       const newResRef = push(reservationsRef)
       const reservationId = newResRef.key
       await set(newResRef, {
@@ -244,7 +245,7 @@ export async function POST(request: NextRequest) {
 
       // Add order to Realtime Database
       console.log('Adding order to Realtime Database...');
-      const ordersRef = ref(database, 'orders')
+      const ordersRef = ref(database!, 'orders')
       const newOrderRef = push(ordersRef)
       const orderId = newOrderRef.key
       try {
@@ -304,7 +305,7 @@ export async function POST(request: NextRequest) {
       // Rollback any reserved items
       try {
         for (const r of reservedItems) {
-          const productRef = ref(database, `products/${r.productId}`)
+          const productRef = ref(database!, `products/${r.productId}`)
           await runTransaction(productRef, (current) => {
             if (!current) return
             const currentStock = current.stock || 0
@@ -317,55 +318,6 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({ error: reserveErr.message || 'Failed to reserve stock' }, { status: 409 })
     }
-        
-        if (userDoc.exists()) {
-          const orderHistory = userDoc.data().orderHistory || []
-          await updateDoc(userRef, {
-            orderHistory: [...orderHistory, orderRef.id]
-          })
-        }
-      } catch (err) {
-        console.error('Failed to update user order history:', err)
-      }
-    }
-
-    // Send order confirmation email
-    try {
-      const { sendOrderConfirmation } = await import('@/lib/email-service')
-      await sendOrderConfirmation(userEmail, {
-        orderNumber,
-        customerName: userName,
-        email: userEmail,
-        phone: shippingAddress.phone || 'N/A',
-        address: `${shippingAddress.address}, ${shippingAddress.city}, ${shippingAddress.state} - ${shippingAddress.pincode}`,
-        items: items.map((item: any) => ({
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price * item.quantity,
-          image: item.image
-        })),
-        subtotal: pricing.subtotal,
-        shipping: pricing.shipping,
-        total: pricing.total,
-        paymentMethod: 'Razorpay',
-        orderDate: new Date().toLocaleDateString('en-IN', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric'
-        })
-      })
-    } catch (err) {
-      console.error('Failed to send confirmation email:', err)
-      // Don't fail the order if email fails
-    }
-
-    console.log('Order created successfully:', { orderId, orderNumber });
-    return NextResponse.json({
-      success: true,
-      orderId,
-      orderNumber,
-      message: 'Order created successfully'
-    })
 
   } catch (error: any) {
     console.error('Error creating order:', error);
@@ -390,7 +342,7 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const orderRef = ref(database, `orders/${orderId}`)
+    const orderRef = ref(database!, `orders/${orderId}`)
     const snapshot = await get(orderRef)
 
     if (!snapshot.exists()) {
@@ -438,14 +390,14 @@ export async function PUT(request: NextRequest) {
         const reservationId = order?.reservationId
         if (reservationId) {
           // Fetch reservation
-          const resRef = ref(database, `stock_reservations/${reservationId}`)
+          const resRef = ref(database!, `stock_reservations/${reservationId}`)
           const resSnap = await get(resRef)
           if (resSnap.exists()) {
             const reservation = resSnap.val()
             if (reservation.items && reservation.items.length > 0 && reservation.status === 'reserved') {
               // Restore items
               for (const item of reservation.items) {
-                const productRef = ref(database, `products/${item.productId}`)
+                const productRef = ref(database!, `products/${item.productId}`)
                 await runTransaction(productRef, (current) => {
                   if (!current) return
                   const currentStock = current.stock || 0

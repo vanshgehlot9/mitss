@@ -518,7 +518,7 @@ export default function CheckoutPage() {
                   <div className="flex justify-between text-[#1A2642]/70">
                     <span>Shipping</span>
                     <span className={shipping === 0 ? "text-green-600 font-semibold" : ""}>
-                      {shipping === 0 ? "FREE" : `₹${shipping.toLocaleString('en-IN')}`}
+                      {shipping === 0 ? "FREE" : `₹${(shipping as number).toLocaleString('en-IN')}`}
                     </span>
                   </div>
                   <div className="border-t border-gray-200 pt-3 flex justify-between text-xl font-bold text-[#1A2642]">

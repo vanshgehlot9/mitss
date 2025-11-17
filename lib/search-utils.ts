@@ -309,7 +309,7 @@ export function getDidYouMeanSuggestion(
     }
   })
 
-  return closestMatch?.word || null
+  return (closestMatch as any)?.word || null
 }
 
 /**

@@ -223,50 +223,58 @@ export async function POST(request: NextRequest) {
     try {
       const { sendOrderConfirmation } = await import('@/lib/email-service')
       
-      // Fetch PDF invoice
-      let invoicePdfBuffer: Buffer | undefined
-      try {
-        const invoiceResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/orders/invoice?orderId=${updatedOrder.id}&format=pdf`,
-          {
-            headers: {
-              'x-user-id': updatedOrder.userId || 'system',
+      // Send email only if we have an updated order
+      if (updatedOrder) {
+        // Fetch PDF invoice (best-effort)
+        let invoicePdfBuffer: Buffer | undefined
+        try {
+          const invoiceId = (updatedOrder as any)._id || (updatedOrder as any).orderId || ''
+          const invoiceResponse = await fetch(
+            `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/orders/invoice?orderId=${invoiceId}&format=pdf`,
+            {
+              headers: {
+                'x-user-id': (updatedOrder as any).userId || 'system',
+              }
             }
+          )
+
+          if (invoiceResponse.ok) {
+            const arrayBuffer = await invoiceResponse.arrayBuffer()
+            invoicePdfBuffer = Buffer.from(arrayBuffer)
           }
-        )
-        
-        if (invoiceResponse.ok) {
-          const arrayBuffer = await invoiceResponse.arrayBuffer()
-          invoicePdfBuffer = Buffer.from(arrayBuffer)
+        } catch (invoiceError) {
+          console.warn('Failed to fetch invoice PDF for email:', invoiceError)
+          // Continue without PDF attachment
         }
-      } catch (invoiceError) {
-        console.warn('Failed to fetch invoice PDF for email:', invoiceError)
-        // Continue without PDF attachment
+
+        try {
+          await sendOrderConfirmation((updatedOrder as any).customerEmail || '', {
+            orderNumber: (updatedOrder as any).orderId,
+            customerName: (updatedOrder as any).customerName,
+            email: (updatedOrder as any).customerEmail,
+            phone: (updatedOrder as any).customerPhone || 'N/A',
+            address: `${(updatedOrder as any).shippingAddress?.address || ''}, ${(updatedOrder as any).shippingAddress?.city || ''}, ${(updatedOrder as any).shippingAddress?.state || ''} - ${(updatedOrder as any).shippingAddress?.pincode || ''}`,
+            items: ((updatedOrder as any).items || []).map((item: any) => ({
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price * item.quantity,
+              image: item.image
+            })),
+            subtotal: (updatedOrder as any).subtotal || (updatedOrder as any).totalAmount,
+            shipping: (updatedOrder as any).shippingCost || 0,
+            total: (updatedOrder as any).totalAmount,
+            paymentMethod: 'Razorpay',
+            orderDate: new Date((updatedOrder as any).createdAt).toLocaleDateString('en-IN', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric'
+            })
+          }, invoicePdfBuffer)
+          console.log('Order confirmation email sent to:', (updatedOrder as any).customerEmail)
+        } catch (emailError) {
+          console.error('Failed to send confirmation email:', emailError)
+        }
       }
-      
-      await sendOrderConfirmation(updatedOrder.customerEmail, {
-        orderNumber: updatedOrder.orderId,
-        customerName: updatedOrder.customerName,
-        email: updatedOrder.customerEmail,
-        phone: updatedOrder.customerPhone || 'N/A',
-        address: `${updatedOrder.shippingAddress?.address || ''}, ${updatedOrder.shippingAddress?.city || ''}, ${updatedOrder.shippingAddress?.state || ''} - ${updatedOrder.shippingAddress?.pincode || ''}`,
-        items: updatedOrder.items.map((item: any) => ({
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price * item.quantity,
-          image: item.image
-        })),
-        subtotal: updatedOrder.subtotal || updatedOrder.totalAmount,
-        shipping: updatedOrder.shippingCost || 0,
-        total: updatedOrder.totalAmount,
-        paymentMethod: 'Razorpay',
-        orderDate: new Date(updatedOrder.createdAt).toLocaleDateString('en-IN', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric'
-        })
-      }, invoicePdfBuffer)
-      console.log('Order confirmation email sent to:', updatedOrder.customerEmail)
     } catch (emailError) {
       console.error('Failed to send confirmation email:', emailError)
       // Don't fail the payment verification if email fails

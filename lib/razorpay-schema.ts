@@ -260,6 +260,8 @@ export const COLLECTIONS = {
   ORDERS: 'razorpay_orders',
   PAYMENTS: 'razorpay_payments',
   WEBHOOKS: 'razorpay_webhooks',
+  ALERTS: 'alerts',
+  DISPUTES: 'disputes',
 } as const;
 
 /**
