@@ -48,15 +48,25 @@ export async function GET() {
       troubleshooting: configValid ? null : {
         issue: 'Environment variables are not detected at runtime',
         steps: [
-          '1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables',
-          '2. Add RAZORPAY_KEY_ID (should start with "rzp_")',
-          '3. Add RAZORPAY_KEY_SECRET (your secret key from Razorpay dashboard)',
-          '4. Ensure both are enabled for "Production" environment',
-          '5. **CRITICAL: REDEPLOY your application** - Environment variables only apply to new deployments',
-          '6. Go to Deployments tab → Click "..." on latest deployment → "Redeploy"',
-          '7. Wait for deployment to complete, then test again',
+          '1. Verify variables are LINKED to your project (if using org-level vars)',
+          '   - In Vercel Dashboard → Settings → Environment Variables',
+          '   - Look for "Link To Projects" section',
+          '   - Make sure your project (mitss or mitss-projects) is selected',
+          '2. If variables are project-level, verify they are set for "Production" environment',
+          '3. **CRITICAL: REDEPLOY your application** - Environment variables only apply to new deployments',
+          '   - Go to Deployments tab → Find latest deployment → Click "..." → "Redeploy"',
+          '   - OR trigger a new deployment by pushing to your repository',
+          '4. Wait for deployment to complete (2-5 minutes)',
+          '5. Check this endpoint again after redeployment: /api/razorpay/check-env',
+          '6. If still failing, check Vercel Function Logs to see actual runtime values',
         ],
-        note: 'If you already added variables but still see this error, you MUST redeploy for them to take effect!',
+        note: '⚠️ IMPORTANT: Even if variables are set in Vercel Dashboard, you MUST redeploy for them to be available at runtime. Environment variables are injected during deployment build, not at runtime.',
+        commonIssues: [
+          'Organization-level variables not linked to your project',
+          'Variables set but deployment is older than when variables were added',
+          'Variables not enabled for Production environment',
+          'Typo in variable names (should be exactly: RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET)',
+        ],
       },
     }, { status: 200 });
   } catch (error: any) {
