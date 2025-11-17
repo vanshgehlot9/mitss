@@ -39,6 +39,14 @@ export interface Review {
 // POST - Create new review
 export async function POST(request: NextRequest) {
   try {
+    // Check if Firestore is initialized
+    if (!db) {
+      return NextResponse.json(
+        { error: 'Reviews service is not available' },
+        { status: 503 }
+      )
+    }
+
     // Rate limiting
     const clientIp = getClientIp(request)
     const rateLimit = checkRateLimit(clientIp, rateLimitConfigs.review)
@@ -156,6 +164,14 @@ export async function POST(request: NextRequest) {
 // GET - Fetch reviews
 export async function GET(request: NextRequest) {
   try {
+    // Check if Firestore is initialized
+    if (!db) {
+      return NextResponse.json(
+        { error: 'Reviews service is not available' },
+        { status: 503 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const productId = searchParams.get('productId')
     const status = searchParams.get('status') || 'approved'

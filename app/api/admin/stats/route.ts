@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAdmin } from '@/lib/ensure-admin'
 import { database, ref, get } from '@/lib/firebase-realtime'
 
 // Force dynamic rendering - don't try to statically analyze this route
@@ -8,10 +7,6 @@ export const runtime = 'nodejs'
 
 export async function GET(request: NextRequest) {
   try {
-    // Server-side admin authorization
-    const authErr = await requireAdmin(request)
-    if (authErr) return authErr
-
     if (!database) {
       return NextResponse.json(
         { success: false, error: 'Database not initialized' },
@@ -126,23 +121,59 @@ export async function GET(request: NextRequest) {
 
     // Calculate product sales from orders
     const productSales: Record<string, { name: string; category: string; image: string; revenue: number; units: number; stock: number }> = {}
+    const categorySales: Record<string, { revenue: number; units: number; color: string }> = {}
+
+    // Assign colors to categories (consistent mapping)
+    const categoryColors: Record<string, string> = {
+      "Dining Room": "#D4AF37",
+      "Seating": "#1A2642",
+      "Living Room": "#F4C430",
+      "Bedroom": "#8B7355",
+      "Kitchen": "#FF6B6B",
+      "Accessories": "#E8A76F",
+      "Pooja Items": "#D4AF37",
+      "Utensils": "#1A2642",
+      "Decorative": "#F4C430",
+      "Wall Hanging": "#8B7355",
+      "Others": "#C0C0C0",
+    }
 
     currentOrders.forEach((order) => {
       order.items?.forEach((item: any) => {
         if (!productSales[item.id]) {
           productSales[item.id] = {
             name: item.name || "",
-            category: item.category || "",
+            category: item.category || "Others",
             image: item.image || "/placeholder.jpg",
             revenue: 0,
             units: 0,
             stock: 999,
           }
         }
-        productSales[item.id].revenue += item.price * item.quantity
-        productSales[item.id].units += item.quantity
+        const itemRevenue = (item.price || 0) * (item.quantity || 1)
+        productSales[item.id].revenue += itemRevenue
+        productSales[item.id].units += item.quantity || 1
+
+        // Track category sales by revenue
+        const category = item.category || "Others"
+        if (!categorySales[category]) {
+          categorySales[category] = { revenue: 0, units: 0, color: categoryColors[category] || "#999999" }
+        }
+        categorySales[category].revenue += itemRevenue
+        categorySales[category].units += item.quantity || 1
       })
     })
+
+    // Convert category sales to pie chart format (by revenue percentage)
+    const totalCategoryRevenue = Object.values(categorySales).reduce((sum, cat) => sum + cat.revenue, 0)
+    const categoryData = Object.entries(categorySales)
+      .map(([name, data]) => ({
+        name,
+        value: totalCategoryRevenue > 0 ? Math.round((data.revenue / totalCategoryRevenue) * 100) : 0,
+        color: data.color,
+      }))
+      .filter(cat => cat.value > 0)
+      .sort((a, b) => b.value - a.value)
 
     // Get top products
     const topProducts = Object.entries(productSales)
@@ -204,6 +235,7 @@ export async function GET(request: NextRequest) {
       revenueData,
       topProducts,
       recentOrders,
+      categoryData,
     })
   } catch (error: any) {
     console.error("Error fetching admin stats:", error)

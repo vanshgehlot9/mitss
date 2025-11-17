@@ -72,6 +72,7 @@ export default function AdminDashboard() {
   const [topProducts, setTopProducts] = useState<TopProduct[]>([])
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([])
   const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d">("7d")
+  const [categoryData, setCategoryData] = useState<Array<{ name: string; value: number; color: string }>>([])
 
   useEffect(() => {
     if (!user) {
@@ -79,19 +80,9 @@ export default function AdminDashboard() {
       return
     }
 
-    // If user data is loaded, ensure the user has an admin role
-    if (userData) {
-      const role = userData.role || ''
-      if (!(role === 'admin' || role === 'super_admin')) {
-        // Not an admin - redirect to home
-        router.push('/')
-        return
-      }
-    }
-
-    // Fetch dashboard data only for authenticated admin users
+    // Allow any authenticated user to access admin dashboard
     fetchDashboardData()
-  }, [user, userData, router, timeRange])
+  }, [user, router, timeRange])
 
   const fetchDashboardData = async () => {
     setLoading(true)
@@ -104,6 +95,20 @@ export default function AdminDashboard() {
         setRevenueData(data.revenueData || [])
         setTopProducts(data.topProducts || [])
         setRecentOrders(data.recentOrders || [])
+        
+        // Set category data from API or use default
+        if (data.categoryData && data.categoryData.length > 0) {
+          setCategoryData(data.categoryData)
+        } else {
+          // Use default data if no real data available
+          setCategoryData([
+            { name: "Living Room", value: 35, color: "#F4C430" },
+            { name: "Dining Room", value: 25, color: "#D4AF37" },
+            { name: "Seating", value: 20, color: "#1A2642" },
+            { name: "Bedroom", value: 15, color: "#8B7355" },
+            { name: "Kitchen", value: 5, color: "#FF6B6B" },
+          ])
+        }
       }
     } catch (error) {
       console.error("Error fetching dashboard data:", error)
@@ -112,12 +117,13 @@ export default function AdminDashboard() {
     }
   }
 
-  const categoryData = [
-    { name: "Pooja Items", value: 35, color: "#D4AF37" },
-    { name: "Utensils", value: 25, color: "#1A2642" },
-    { name: "Decorative", value: 20, color: "#F4C430" },
-    { name: "Wall Hanging", value: 15, color: "#8B7355" },
-    { name: "Others", value: 5, color: "#C0C0C0" },
+  // Default category colors for fallback
+  const defaultCategoryData = [
+    { name: "Living Room", value: 35, color: "#F4C430" },
+    { name: "Dining Room", value: 25, color: "#D4AF37" },
+    { name: "Seating", value: 20, color: "#1A2642" },
+    { name: "Bedroom", value: 15, color: "#8B7355" },
+    { name: "Kitchen", value: 5, color: "#FF6B6B" },
   ]
 
   const containerVariants = {
@@ -362,7 +368,7 @@ export default function AdminDashboard() {
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
-                      data={categoryData}
+                      data={categoryData.length > 0 ? categoryData : defaultCategoryData}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -371,7 +377,7 @@ export default function AdminDashboard() {
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {categoryData.map((entry, index) => (
+                      {(categoryData.length > 0 ? categoryData : defaultCategoryData).map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>

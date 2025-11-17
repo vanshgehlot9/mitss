@@ -8,11 +8,13 @@ import { Button } from "@/components/ui/button"
 
 export default function WelcomePopup() {
   const [isOpen, setIsOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const [phoneNumber, setPhoneNumber] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
 
   useEffect(() => {
+    setMounted(true)
     // Check if user has already submitted their number
     const hasSubmitted = localStorage.getItem("mitss_phone_submitted")
     if (!hasSubmitted) {
@@ -68,6 +70,10 @@ export default function WelcomePopup() {
   const handleSkip = () => {
     localStorage.setItem("mitss_phone_submitted", "true")
     setIsOpen(false)
+  }
+
+  if (!mounted) {
+    return null
   }
 
   return (

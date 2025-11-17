@@ -10,6 +10,14 @@ interface RecentlyViewed {
 // POST - Add product to recently viewed
 export async function POST(request: NextRequest) {
   try {
+    // Check if Firestore is initialized
+    if (!db) {
+      return NextResponse.json(
+        { error: 'Recently viewed service is not available' },
+        { status: 503 }
+      )
+    }
+
     const body = await request.json()
     const { userId, productId } = body
 
@@ -71,6 +79,14 @@ export async function POST(request: NextRequest) {
 // GET - Fetch recently viewed products
 export async function GET(request: NextRequest) {
   try {
+    // Check if Firestore is initialized
+    if (!db) {
+      return NextResponse.json(
+        { error: 'Recently viewed service is not available' },
+        { status: 503 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
     const limit = parseInt(searchParams.get('limit') || '10')

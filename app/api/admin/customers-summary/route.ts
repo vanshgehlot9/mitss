@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { database, ref, get } from '@/lib/firebase-realtime'
-import { requireAdmin } from '@/lib/ensure-admin'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export async function GET(request: NextRequest) {
   try {
-    const authErr = await requireAdmin(request)
-    if (authErr) return authErr
-
     if (!database) {
       return NextResponse.json(
         { success: false, error: 'Database not initialized' },

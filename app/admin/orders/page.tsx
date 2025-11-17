@@ -110,7 +110,16 @@ export default function OrdersPage() {
       setLoading(true)
       
       // Fetch orders from API (much faster than direct Firestore)
-      const response = await fetch('/api/admin/orders?limit=100')
+      // Attach local dev admin token if available
+      let headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('mitss_admin_token') : null
+        if (token) headers['authorization'] = `Bearer ${token}`
+      } catch (e) {
+        // ignore localStorage issues
+      }
+
+      const response = await fetch('/api/admin/orders?limit=100', { headers })
       const data = await response.json()
 
       if (!data.success) {
@@ -159,9 +168,15 @@ export default function OrdersPage() {
     setUpdating(orderId)
     try {
       // Update via API
+      let headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('mitss_admin_token') : null
+        if (token) headers['authorization'] = `Bearer ${token}`
+      } catch (e) {}
+
       const response = await fetch(`/api/admin/orders/${orderId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ status: newStatus })
       })
       
@@ -206,9 +221,15 @@ export default function OrdersPage() {
 
     try {
       // Update via API
+      let headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('mitss_admin_token') : null
+        if (token) headers['authorization'] = `Bearer ${token}`
+      } catch (e) {}
+
       const response = await fetch('/api/admin/orders/bulk-update', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ orderIds: selectedOrders, status: newStatus })
       })
       

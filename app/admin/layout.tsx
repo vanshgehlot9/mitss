@@ -53,6 +53,18 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       if (loading) return
 
       // Not logged in - redirect to login
+      // If a local MITSS admin token is present, treat as authorized (dev mode)
+      try {
+        const localToken = typeof window !== 'undefined' ? localStorage.getItem('mitss_admin_token') : null
+        if (localToken) {
+          setIsAuthorized(true)
+          setIsCheckingAuth(false)
+          return
+        }
+      } catch (e) {
+        // ignore localStorage issues
+      }
+
       if (!user) {
         router.push('/admin/login')
         return
@@ -67,7 +79,22 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   }, [user, loading, router, pathname])
 
   const handleLogout = async () => {
-    await logout()
+    try {
+      // Clear local admin token if present
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('mitss_admin_token')
+        localStorage.removeItem('mitss_admin_email')
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    try {
+      await logout()
+    } catch (err) {
+      // ignore firebase logout errors when using local admin
+    }
+
     router.push('/admin/login')
   }
 

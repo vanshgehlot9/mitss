@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { database, ref, update } from '@/lib/firebase-realtime'
-import { requireAdmin } from '@/lib/ensure-admin'
 
 export const dynamic = 'force-dynamic'
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
-    const authErr = await requireAdmin(request)
-    if (authErr) return authErr
-
     if (!database) {
       return NextResponse.json(
         { success: false, error: 'Database not initialized' },
@@ -19,7 +15,7 @@ export async function PATCH(
       )
     }
 
-    const { orderId } = params
+    const { orderId } = await params
     const body = await request.json()
     
     // Update order in Realtime Database

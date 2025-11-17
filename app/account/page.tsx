@@ -26,6 +26,11 @@ function AccountContent() {
   const [loading, setLoading] = useState(false)
   const [orders, setOrders] = useState<any[]>([])
   const [loadingOrders, setLoadingOrders] = useState(false)
+  const [selectedOrder, setSelectedOrder] = useState<string | null>(null)
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [showReturnModal, setShowReturnModal] = useState(false)
+  const [cancellationReason, setCancellationReason] = useState("")
+  const [returnData, setReturnData] = useState({ reason: "", description: "", type: "return" })
   
   const [loginData, setLoginData] = useState({ email: "", password: "" })
   const [registerData, setRegisterData] = useState({
@@ -87,6 +92,72 @@ function AccountContent() {
     } catch (error) {
       console.error('Error downloading invoice:', error)
       toast.error('Error downloading invoice')
+    }
+  }
+
+  const cancelOrder = async () => {
+    if (!selectedOrder || !cancellationReason.trim()) {
+      toast.error('Please provide a cancellation reason')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/orders/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: selectedOrder,
+          reason: cancellationReason
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        toast.success('Order cancelled successfully')
+        setShowCancelModal(false)
+        setCancellationReason('')
+        setSelectedOrder(null)
+        fetchOrders()
+      } else {
+        toast.error(data.error || 'Failed to cancel order')
+      }
+    } catch (error: any) {
+      toast.error('Error cancelling order')
+      console.error(error)
+    }
+  }
+
+  const submitReturnRequest = async () => {
+    if (!selectedOrder || !returnData.reason.trim()) {
+      toast.error('Please provide a reason for return/exchange')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/orders/returns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: selectedOrder,
+          reason: returnData.reason,
+          description: returnData.description,
+          returnType: returnData.type
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        toast.success(`${returnData.type === 'return' ? 'Return' : 'Exchange'} request submitted`)
+        setShowReturnModal(false)
+        setReturnData({ reason: "", description: "", type: "return" })
+        setSelectedOrder(null)
+        fetchOrders()
+      } else {
+        toast.error(data.error || 'Failed to submit request')
+      }
+    } catch (error: any) {
+      toast.error('Error submitting request')
+      console.error(error)
     }
   }
 
@@ -450,7 +521,7 @@ function AccountContent() {
                           </div>
                           <div className="text-right">
                             <p className="text-2xl font-bold mb-2">₹{order.pricing.total.toLocaleString()}</p>
-                            <div className="flex gap-2">
+                            <div className="flex flex-col gap-2">
                               <Button 
                                 variant="outline" 
                                 size="sm"
@@ -469,6 +540,32 @@ function AccountContent() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                                   </svg>
                                   Invoice
+                                </Button>
+                              )}
+                              {['pending', 'confirmed', 'processing'].includes(order.status) && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="text-red-600 hover:text-red-700"
+                                  onClick={() => {
+                                    setSelectedOrder(order.id)
+                                    setShowCancelModal(true)
+                                  }}
+                                >
+                                  Cancel Order
+                                </Button>
+                              )}
+                              {order.status === 'delivered' && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="text-orange-600 hover:text-orange-700"
+                                  onClick={() => {
+                                    setSelectedOrder(order.id)
+                                    setShowReturnModal(true)
+                                  }}
+                                >
+                                  Return/Exchange
                                 </Button>
                               )}
                             </div>
@@ -580,6 +677,112 @@ function AccountContent() {
             </div>
           </section>
         </>
+      )}
+
+      {/* Cancel Order Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-lg p-6 max-w-md w-full"
+          >
+            <h3 className="text-xl font-bold mb-4">Cancel Order</h3>
+            <p className="text-muted-foreground mb-4">Please provide a reason for cancellation:</p>
+            <textarea
+              placeholder="Enter reason..."
+              value={cancellationReason}
+              onChange={(e) => setCancellationReason(e.target.value)}
+              className="w-full border rounded-lg p-2 mb-4 min-h-[100px]"
+            />
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowCancelModal(false)
+                  setCancellationReason('')
+                  setSelectedOrder(null)
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-red-600 hover:bg-red-700"
+                onClick={cancelOrder}
+              >
+                Confirm Cancellation
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Return/Exchange Modal */}
+      {showReturnModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-lg p-6 max-w-md w-full"
+          >
+            <h3 className="text-xl font-bold mb-4">Return or Exchange</h3>
+            <div className="space-y-4 mb-4">
+              <div>
+                <label className="text-sm font-medium">Type</label>
+                <select
+                  value={returnData.type}
+                  onChange={(e) => setReturnData({ ...returnData, type: e.target.value })}
+                  className="w-full border rounded-lg p-2 mt-1"
+                >
+                  <option value="return">Return</option>
+                  <option value="exchange">Exchange</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Reason</label>
+                <select
+                  value={returnData.reason}
+                  onChange={(e) => setReturnData({ ...returnData, reason: e.target.value })}
+                  className="w-full border rounded-lg p-2 mt-1"
+                >
+                  <option value="">Select reason...</option>
+                  <option value="Defective product">Defective product</option>
+                  <option value="Not as described">Not as described</option>
+                  <option value="Wrong item delivered">Wrong item delivered</option>
+                  <option value="Changed mind">Changed mind</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Additional Details</label>
+                <textarea
+                  placeholder="Describe the issue..."
+                  value={returnData.description}
+                  onChange={(e) => setReturnData({ ...returnData, description: e.target.value })}
+                  className="w-full border rounded-lg p-2 min-h-[100px]"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowReturnModal(false)
+                  setReturnData({ reason: "", description: "", type: "return" })
+                  setSelectedOrder(null)
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-[#D4AF37] hover:bg-[#B8941F]"
+                onClick={submitReturnRequest}
+              >
+                Submit Request
+              </Button>
+            </div>
+          </motion.div>
+        </div>
       )}
 
       <Footer />

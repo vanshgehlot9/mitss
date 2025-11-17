@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/firebase'
-import { doc, getDoc } from 'firebase/firestore'
+import { database, ref, get } from '@/lib/firebase-realtime'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
@@ -17,17 +16,24 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Fetch order details
-    const orderDoc = await getDoc(doc(db, 'orders', orderId))
+    if (!database) {
+      return NextResponse.json(
+        { error: 'Database not initialized' },
+        { status: 500 }
+      )
+    }
+
+    // Fetch order from Realtime Database
+    const orderSnapshot = await get(ref(database, `orders/${orderId}`))
     
-    if (!orderDoc.exists()) {
+    if (!orderSnapshot.exists()) {
       return NextResponse.json(
         { error: 'Order not found' },
         { status: 404 }
       )
     }
 
-    const order = { id: orderDoc.id, ...orderDoc.data() }
+    const order = { id: orderId, ...orderSnapshot.val() }
 
     // Generate invoice HTML
     const invoiceHTML = generateInvoiceHTML(order)

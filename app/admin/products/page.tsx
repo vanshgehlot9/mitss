@@ -9,9 +9,6 @@ import { Search, Plus, Edit, Trash2, Eye, Upload, Settings } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { products } from '@/lib/products-data'
-import ProductActions from '@/components/admin/product-actions'
-import BulkImportManager from '@/components/admin/bulk-import-manager'
-import BulkOperationsManager from '@/components/admin/bulk-operations-manager'
 
 export default function ProductsPage() {
   const [allProducts, setAllProducts] = useState(products)
@@ -64,18 +61,10 @@ export default function ProductsPage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-1">
             <TabsTrigger value="products" className="flex items-center gap-2">
               <Eye className="h-4 w-4" />
               Products
-            </TabsTrigger>
-            <TabsTrigger value="bulk-import" className="flex items-center gap-2">
-              <Upload className="h-4 w-4" />
-              Bulk Import
-            </TabsTrigger>
-            <TabsTrigger value="bulk-operations" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Bulk Operations
             </TabsTrigger>
           </TabsList>
 
@@ -148,12 +137,13 @@ export default function ProductsPage() {
                           <Eye className="h-4 w-4" />
                         </Button>
                       </Link>
-                      <ProductActions
-                        productId={product.id.toString()}
-                        productName={product.name}
-                        onDelete={() => handleProductDeleted(product.id)}
-                        onDuplicate={handleProductDuplicated}
-                      />
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleProductDeleted(product.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -167,22 +157,6 @@ export default function ProductsPage() {
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
-
-          {/* Bulk Import Tab */}
-          <TabsContent value="bulk-import">
-            <BulkImportManager />
-          </TabsContent>
-
-          {/* Bulk Operations Tab */}
-          <TabsContent value="bulk-operations">
-            <BulkOperationsManager products={allProducts.map(p => ({
-              _id: p.id.toString(),
-              name: p.name,
-              category: p.category,
-              price: p.price,
-              stock: 10, // placeholder
-            }))} />
           </TabsContent>
         </Tabs>
       </div>

@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import CartDrawer from "@/components/cart-drawer"
 import MegaMenu from "@/components/mega-menu"
-import SearchEnhancedAutocomplete from "@/components/search/search-enhanced-autocomplete"
+import SearchAutocomplete from "@/components/search/search-autocomplete"
 import { megaMenuData } from "@/lib/navigation-data"
 import Image from "next/image"
 import Link from "next/link"
@@ -29,11 +29,6 @@ export default function Navigation() {
   const [activeMenu, setActiveMenu] = useState<string | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -149,7 +144,7 @@ export default function Navigation() {
                 <Heart className="w-5 h-5" />
               </Button>
             </Link>
-            {mounted && <CartDrawer />}
+            <CartDrawer />
 
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild className="lg:hidden">
@@ -266,7 +261,7 @@ export default function Navigation() {
             <DialogTitle>Search Products</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <SearchEnhancedAutocomplete
+            <SearchAutocomplete
               placeholder="Search for furniture..."
               onSearch={() => setSearchOpen(false)}
             />
