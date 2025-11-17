@@ -8,19 +8,30 @@ export async function POST(request: NextRequest) {
     const db = client.db(process.env.DATABASE_NAME || "default")
     const collection = db.collection(process.env.PRODUCTS_COLLECTION || "products")
 
+    // Check for force flag in query params
+    const { searchParams } = new URL(request.url)
+    const force = searchParams.get('force') === 'true'
+
     // Check if products already exist
     const existingCount = await collection.countDocuments()
     
-    if (existingCount > 0) {
+    if (existingCount > 0 && !force) {
       return NextResponse.json(
         { message: "Products already seeded", count: existingCount },
         { status: 200 }
       )
     }
 
+    // Clear existing products if force is true
+    if (force && existingCount > 0) {
+      await collection.deleteMany({})
+      console.log('Cleared existing products for re-seeding')
+    }
+
     // Insert initial products
-    const productsWithTimestamps = initialProducts.map(product => ({
+    const productsWithTimestamps = initialProducts.map((product, index) => ({
       ...product,
+      id: index + 1,
       createdAt: new Date(),
       updatedAt: new Date(),
     }))

@@ -102,7 +102,7 @@ export default function Gallery() {
           className="text-center mt-16"
         >
           <a
-            href="https://instagram.com/mitss"
+            href="https://www.instagram.com/mitss.website/"
             target="_blank"
             rel="noopener noreferrer"
             className="group inline-flex items-center gap-3 bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 bg-[length:200%_100%] hover:bg-right-bottom text-white px-10 py-5 rounded-2xl font-bold text-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 relative overflow-hidden"
@@ -114,7 +114,7 @@ export default function Gallery() {
           </a>
           
           <p className="mt-6 text-sm text-[#1A2642]/60">
-            Tag us <span className="font-semibold text-purple-600">@mitss</span> to be featured
+            Tag us <span className="font-semibold text-purple-600">@mitss.website</span> to be featured
           </p>
         </motion.div>
       </div>

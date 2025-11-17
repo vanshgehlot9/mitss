@@ -181,7 +181,7 @@ export const organizationStructuredData = {
   },
   sameAs: [
     'https://www.facebook.com/mitss',
-    'https://www.instagram.com/mitss',
+    'https://www.instagram.com/mitss.website/',
     'https://twitter.com/mitss_store'
   ]
 }
