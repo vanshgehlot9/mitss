@@ -78,7 +78,10 @@ export default function WelcomePopup() {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-md max-w-[calc(100vw-2rem)] mx-4 bg-gradient-to-br from-[#FAF9F6] to-white border-2 border-[#D4AF37]/30 shadow-2xl rounded-3xl p-6 sm:p-8">
+      <DialogContent
+        showCloseButton={false}
+        className="sm:max-w-md max-w-[calc(100vw-2rem)] mx-4 bg-gradient-to-br from-[#FAF9F6] to-white border-2 border-[#D4AF37]/30 shadow-2xl rounded-3xl p-6 sm:p-8"
+      >
         <DialogHeader>
           <DialogTitle className="text-2xl sm:text-3xl font-bold text-[#1A2642] text-center font-serif">
             Welcome to Mitss! 🪵
