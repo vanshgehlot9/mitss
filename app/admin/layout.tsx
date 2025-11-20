@@ -26,6 +26,7 @@ const adminLinks = [
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
   { href: "/admin/customers", label: "Customers", icon: Users },
+  { href: "/admin/traffic", label: "Traffic Analytics", icon: BarChart3 },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/support", label: "Support", icon: MessageSquare },
   { href: "/admin/marketing", label: "Marketing", icon: Megaphone },

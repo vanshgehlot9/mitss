@@ -247,15 +247,23 @@ export default function TrafficAnalyticsPage() {
             <CardContent>
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
                 {recentVisitors.slice(0, 10).map((visitor: any, index: number) => (
-                  <div key={index} className="flex items-start gap-3 p-3 bg-[#FAF9F6] rounded-lg">
+                  <div key={index} className="flex items-start gap-3 p-3 bg-[#FAF9F6] rounded-lg border border-[#D4AF37]/10">
                     <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[#1A2642] truncate">
-                        {visitor.city}, {visitor.country}
+                      <div className="flex items-center gap-2 mb-1">
+                        <MapPin className="w-3 h-3 text-[#D4AF37]" />
+                        <p className="text-sm font-medium text-[#1A2642] truncate">
+                          {visitor.city}, {visitor.country}
+                        </p>
+                      </div>
+                      <p className="text-xs font-mono text-[#0D7377] mb-1">
+                        IP: {visitor.ip}
                       </p>
-                      <p className="text-xs text-[#1A2642]/60 truncate">{visitor.page}</p>
-                      <p className="text-xs text-[#1A2642]/40">
-                        {new Date(visitor.timestamp).toLocaleString()}
+                      <p className="text-xs text-[#1A2642]/60 truncate">
+                        📄 {visitor.page}
+                      </p>
+                      <p className="text-xs text-[#1A2642]/40 mt-1">
+                        🕒 {new Date(visitor.timestamp).toLocaleString()}
                       </p>
                     </div>
                   </div>

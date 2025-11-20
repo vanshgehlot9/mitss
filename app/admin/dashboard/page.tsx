@@ -527,6 +527,12 @@ export default function AdminDashboard() {
                     <span>View Customers</span>
                   </Button>
                 </Link>
+                <Link href="/admin/traffic">
+                  <Button variant="outline" className="w-full h-20 flex flex-col gap-2">
+                    <TrendingUp className="w-6 h-6" />
+                    <span>Traffic Analytics</span>
+                  </Button>
+                </Link>
                 <Link href="/admin/analytics">
                   <Button variant="outline" className="w-full h-20 flex flex-col gap-2">
                     <TrendingUp className="w-6 h-6" />
