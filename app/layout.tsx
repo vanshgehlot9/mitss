@@ -58,13 +58,18 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
+      { url: '/mitsslogo.png', type: 'image/png', sizes: 'any' },
       { url: '/favicon.ico', type: 'image/x-icon', sizes: 'any' },
       { url: '/mitsslogo.png', type: 'image/png', sizes: '16x16' },
       { url: '/mitsslogo.png', type: 'image/png', sizes: '32x32' },
+      { url: '/mitsslogo.png', type: 'image/png', sizes: '96x96' },
       { url: '/mitsslogo.png', type: 'image/png', sizes: '192x192' },
       { url: '/mitsslogo.png', type: 'image/png', sizes: '512x512' },
     ],
-    shortcut: [{ url: '/favicon.ico', type: 'image/x-icon' }],
+    shortcut: [
+      { url: '/mitsslogo.png', type: 'image/png' },
+      { url: '/favicon.ico', type: 'image/x-icon' },
+    ],
     apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
     other: [
       {
@@ -137,14 +142,16 @@ export default function RootLayout({
     <html lang="en" className={`${poppins.variable} ${lora.variable}`} suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
-        {/* Explicit favicon links for better Google compatibility */}
-        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+        {/* Favicon configuration - PNG format preferred by Google */}
         <link rel="icon" type="image/png" sizes="32x32" href="/mitsslogo.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/mitsslogo.png" />
+        <link rel="icon" type="image/png" href="/mitsslogo.png" />
+        <link rel="shortcut icon" type="image/png" href="/mitsslogo.png" />
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
         <link rel="icon" type="image/png" sizes="192x192" href="/mitsslogo.png" />
         <link rel="icon" type="image/png" sizes="512x512" href="/mitsslogo.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-        <link rel="shortcut icon" href="/favicon.ico" />
+        <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={`font-sans antialiased`}>
         <script
