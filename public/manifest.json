@@ -7,54 +7,21 @@
   "background_color": "#ffffff",
   "theme_color": "#8B4513",
   "orientation": "portrait-primary",
-  "categories": ["shopping", "lifestyle"],
+  "categories": [
+    "shopping",
+    "lifestyle"
+  ],
   "lang": "en-IN",
   "dir": "ltr",
   "icons": [
     {
-      "src": "/icons/icon-72x72.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-96x96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-128x128.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-144x144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-152x152.png",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-192x192.png",
+      "src": "/mitsslogo.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-384x384.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-512x512.png",
+      "src": "/mitsslogo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
@@ -82,7 +49,7 @@
       "url": "/products",
       "icons": [
         {
-          "src": "/icons/products-shortcut.png",
+          "src": "/mitsslogo.png",
           "sizes": "96x96",
           "type": "image/png"
         }
@@ -95,7 +62,7 @@
       "url": "/wishlist",
       "icons": [
         {
-          "src": "/icons/wishlist-shortcut.png",
+          "src": "/mitsslogo.png",
           "sizes": "96x96",
           "type": "image/png"
         }
@@ -108,7 +75,7 @@
       "url": "/track-order",
       "icons": [
         {
-          "src": "/icons/track-shortcut.png",
+          "src": "/mitsslogo.png",
           "sizes": "96x96",
           "type": "image/png"
         }
@@ -128,5 +95,9 @@
   "prefer_related_applications": false,
   "scope": "/",
   "gcm_sender_id": "103953800507",
-  "display_override": ["window-controls-overlay", "standalone", "browser"]
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "browser"
+  ]
 }
